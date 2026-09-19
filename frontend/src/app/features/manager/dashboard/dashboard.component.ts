@@ -62,6 +62,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
           <span class="text-xs font-semibold text-gray-500 uppercase tracking-wider">Gross Booking Value</span>
           <div class="mt-2 flex items-baseline gap-2">
             <span class="text-2xl font-extrabold text-gray-900">₹{{ totalRevenue.toLocaleString() }}</span>
+            <span class="text-xs text-emerald-600 font-semibold">₹{{ hostEarnings.toLocaleString() }} net</span>
           </div>
         </div>
       </div>
@@ -113,10 +114,27 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
           <div class="divide-y divide-gray-100">
             @for (booking of filteredBookings; track booking._id) {
               <div class="p-6 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-6 hover:bg-gray-50/50 transition">
-                <div class="space-y-1 flex-1">
-                  <div class="flex items-center gap-2">
+                <div class="space-y-1.5 flex-1">
+                  <div class="flex flex-wrap items-center gap-2">
                     <h3 class="font-bold text-sm text-gray-900">{{ getWarehouseTitle(booking) }}</h3>
                     <app-status-badge [status]="booking.status" />
+                    @if (booking.paymentStatus === 'HELD_IN_ESCROW') {
+                      <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                        🛡️ Paid in Escrow
+                      </span>
+                    } @else if (booking.paymentStatus === 'DISBURSED') {
+                      <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                        💰 Payout Disbursed
+                      </span>
+                    } @else if (booking.paymentStatus === 'REFUNDED') {
+                      <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                        ↩️ Refunded
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                        ⏳ Payment Pending
+                      </span>
+                    }
                   </div>
 
                   <p class="text-xs text-gray-600">
@@ -129,7 +147,9 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                     <span>•</span>
                     <span>Space: <strong class="text-gray-900">{{ booking.quantityBooked }}</strong> {{ getCapacityUnit(booking) }}</span>
                     <span>•</span>
-                    <span>Total Quote: <strong class="text-emerald-700 font-bold text-sm">{{ booking.currency === 'USD' ? '$' : '₹' }}{{ booking.totalAmount }}</strong></span>
+                    <span>Customer Paid: <strong class="text-gray-900 font-bold">{{ booking.currency === 'USD' ? '$' : '₹' }}{{ booking.totalAmount }}</strong></span>
+                    <span>•</span>
+                    <span>Host Net Payout: <strong class="text-emerald-700 font-bold text-sm">{{ booking.currency === 'USD' ? '$' : '₹' }}{{ booking.hostPayoutAmount || (booking.totalAmount * 0.9) }}</strong></span>
                   </div>
                 </div>
 
@@ -281,6 +301,12 @@ export class ManagerDashboardComponent implements OnInit {
     return this.bookings()
       .filter((b) => b.status === 'CONFIRMED' || b.status === 'ACTIVE')
       .reduce((sum, b) => sum + (b.totalAmount || 0), 0);
+  }
+
+  get hostEarnings(): number {
+    return this.bookings()
+      .filter((b) => b.status === 'CONFIRMED' || b.status === 'ACTIVE')
+      .reduce((sum, b) => sum + (b.hostPayoutAmount || Math.round((b.totalAmount || 0) * 0.9 * 100) / 100), 0);
   }
 
   get filteredBookings(): any[] {

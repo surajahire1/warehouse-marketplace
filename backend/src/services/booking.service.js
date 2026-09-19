@@ -166,6 +166,13 @@ export const updateBookingStatus = async (bookingId, newStatus, userId, userRole
     booking.cancellationReason = reason;
   }
 
+  // Escrow lifecycle handling
+  if (newStatus === 'CANCELLED' && booking.paymentStatus === 'HELD_IN_ESCROW') {
+    booking.paymentStatus = 'REFUNDED';
+  } else if (newStatus === 'COMPLETED' && booking.paymentStatus === 'HELD_IN_ESCROW') {
+    booking.paymentStatus = 'DISBURSED';
+  }
+
   await booking.save();
   return booking;
 };

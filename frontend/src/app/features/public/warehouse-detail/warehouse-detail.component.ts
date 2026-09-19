@@ -9,6 +9,8 @@ import { ApiResponse } from '../../../core/models/api-response.model';
 import { CapacityGaugeComponent } from '../../../shared/components/capacity-gauge/capacity-gauge.component';
 import { AuthService } from '../../../core/services/auth.service';
 
+declare var window: any;
+
 @Component({
   selector: 'app-warehouse-detail',
   standalone: true,
@@ -23,16 +25,16 @@ import { AuthService } from '../../../core/services/auth.service';
           <div class="lg:col-span-2 space-y-6">
             <div>
               <span class="text-xs font-semibold uppercase text-indigo-600 tracking-wider">
-                {{ warehouse()!.capacityUnit }} Storage
+                {{ warehouse()!.capacityUnit }} Storage • {{ warehouse()!.currency }}
               </span>
               <h1 class="text-3xl font-extrabold text-gray-900 mt-1">{{ warehouse()!.title }}</h1>
               <p class="text-sm text-gray-500 mt-2">
-                📍 {{ warehouse()!.address.street }}, {{ warehouse()!.address.city }}, {{ warehouse()!.address.state }} {{ warehouse()!.address.postalCode }}
+                📍 {{ warehouse()!.address.street }}, {{ warehouse()!.address.city }}, {{ warehouse()!.address.state }} {{ warehouse()!.address.postalCode }}, {{ warehouse()!.address.country }}
               </p>
             </div>
 
-            <!-- Image placeholder / gallery -->
-            <div class="h-80 bg-gray-100 rounded-2xl overflow-hidden border border-gray-200">
+            <!-- Image gallery -->
+            <div class="h-80 bg-gray-100 rounded-2xl overflow-hidden border border-gray-200 shadow-sm">
               @if (warehouse()!.images && warehouse()!.images.length > 0) {
                 <img [src]="warehouse()!.images[0]" class="w-full h-full object-cover" />
               } @else {
@@ -57,7 +59,7 @@ import { AuthService } from '../../../core/services/auth.service';
             </div>
           </div>
 
-          <!-- Availability & Booking Widget Sidebar -->
+          <!-- Availability & Booking Checkout Sidebar -->
           <div class="lg:col-span-1">
             <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm sticky top-24 space-y-5">
               <div class="flex justify-between items-baseline border-b border-gray-100 pb-4">
@@ -131,21 +133,28 @@ import { AuthService } from '../../../core/services/auth.service';
                 </div>
               }
 
-              <!-- Action Button -->
+              <!-- Escrow Trust Banner -->
+              <div class="p-3 bg-indigo-50/70 border border-indigo-100 rounded-xl text-xs text-indigo-900 flex items-start gap-2">
+                <span>🛡️</span>
+                <span><strong>WareSpace Escrow Protection:</strong> Your payment is held securely in escrow. The host is only paid after confirming your reservation.</span>
+              </div>
+
+              <!-- Payment & Action Button -->
               @if (authService.isAuthenticated()) {
                 <button 
-                  [disabled]="!availabilityResult()?.isAvailable"
-                  (click)="onBookNow()"
-                  class="w-full py-3 bg-indigo-600 text-white font-semibold text-sm rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition"
+                  [disabled]="!availabilityResult()?.isAvailable || processingPayment()"
+                  (click)="onPayAndBook()"
+                  class="w-full py-3.5 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md flex items-center justify-center gap-2"
                 >
-                  Confirm Reservation
+                  <span>💳</span>
+                  <span>{{ processingPayment() ? 'Processing Payment...' : 'Pay & Reserve Space (' + (warehouse()!.currency === 'USD' ? '$' : '₹') + (availabilityResult() ? availabilityResult()!.estimatedTotal : 0) + ')' }}</span>
                 </button>
               } @else {
                 <a 
                   routerLink="/auth/login" 
-                  class="block w-full py-3 text-center bg-gray-900 text-white font-semibold text-sm rounded-lg hover:bg-gray-800 transition"
+                  class="block w-full py-3.5 text-center bg-gray-900 text-white font-bold text-sm rounded-xl hover:bg-gray-800 transition shadow"
                 >
-                  Sign in to Reserve Space
+                  Sign in to Pay & Reserve Space
                 </a>
               }
             </div>
@@ -165,15 +174,27 @@ export class WarehouseDetailComponent implements OnInit {
   availabilityResult = signal<AvailabilityResult | null>(null);
   loading = signal<boolean>(true);
   checking = signal<boolean>(false);
+  processingPayment = signal<boolean>(false);
 
   startDate: string = '';
   endDate: string = '';
-  quantity: number = 100;
+  quantity: number = 5000;
 
   ngOnInit() {
+    this.loadRazorpayScript();
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.fetchWarehouse(id);
+    }
+  }
+
+  loadRazorpayScript() {
+    if (typeof window !== 'undefined' && !document.getElementById('razorpay-checkout-js')) {
+      const script = document.createElement('script');
+      script.id = 'razorpay-checkout-js';
+      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+      script.async = true;
+      document.body.appendChild(script);
     }
   }
 
@@ -215,23 +236,102 @@ export class WarehouseDetailComponent implements OnInit {
       });
   }
 
-  onBookNow() {
+  onPayAndBook() {
     if (!this.availabilityResult()?.isAvailable) return;
 
+    this.processingPayment.set(true);
+
+    const payload = {
+      warehouseId: this.warehouse()!._id,
+      startDate: this.startDate,
+      endDate: this.endDate,
+      quantityBooked: this.quantity,
+    };
+
+    // Step 1: Create Razorpay order and reserve space
     this.http
-      .post<ApiResponse<any>>(`${environment.apiUrl}/bookings`, {
-        warehouseId: this.warehouse()!._id,
-        startDate: this.startDate,
-        endDate: this.endDate,
-        quantityBooked: this.quantity,
-      })
+      .post<ApiResponse<any>>(`${environment.apiUrl}/payments/create-order`, payload)
+      .subscribe({
+        next: (res) => {
+          const orderData = res.data;
+          this.launchRazorpayCheckout(orderData);
+        },
+        error: (err) => {
+          this.processingPayment.set(false);
+          alert(err.error?.message || 'Could not initiate payment order.');
+        },
+      });
+  }
+
+  launchRazorpayCheckout(orderData: any) {
+    const symbol = orderData.currency === 'USD' ? '$' : '₹';
+
+    // If Razorpay SDK loaded and valid key available
+    if (typeof window.Razorpay !== 'undefined' && orderData.keyId && !orderData.keyId.includes('warehousespace')) {
+      const options = {
+        key: orderData.keyId,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: 'WareSpace Marketplace',
+        description: `Storage Reservation for ${orderData.warehouseTitle}`,
+        image: 'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?w=100',
+        order_id: orderData.orderId,
+        handler: (response: any) => {
+          this.verifyPayment({
+            bookingId: orderData.bookingId,
+            orderId: response.razorpay_order_id || orderData.orderId,
+            paymentId: response.razorpay_payment_id,
+            signature: response.razorpay_signature,
+          });
+        },
+        prefill: {
+          name: this.authService.currentUser()?.name || 'Customer',
+          email: this.authService.currentUser()?.email || 'customer@example.com',
+          contact: this.authService.currentUser()?.phone || '9999999999',
+        },
+        theme: {
+          color: '#4f46e5',
+        },
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+      this.processingPayment.set(false);
+    } else {
+      // Developer Sandbox Checkout Simulator
+      const simulatedPayment = confirm(
+        `💳 [Razorpay Checkout Simulator]\n\n` +
+        `Facility: ${orderData.warehouseTitle}\n` +
+        `Amount: ${symbol}${orderData.estimatedTotal} ${orderData.currency}\n` +
+        `Payment Method: UPI / Net Banking / Card\n\n` +
+        `Click "OK" to simulate SUCCESSFUL payment, or "Cancel" to abort.`
+      );
+
+      if (simulatedPayment) {
+        this.verifyPayment({
+          bookingId: orderData.bookingId,
+          orderId: orderData.orderId,
+          paymentId: `pay_sim_${Date.now()}`,
+          signature: 'simulated_signature_valid',
+        });
+      } else {
+        this.processingPayment.set(false);
+      }
+    }
+  }
+
+  verifyPayment(verificationPayload: any) {
+    this.http
+      .post<ApiResponse<any>>(`${environment.apiUrl}/payments/verify`, verificationPayload)
       .subscribe({
         next: () => {
-          alert('Booking placed successfully!');
+          this.processingPayment.set(false);
+          alert('🎉 Payment secured in escrow! Your reservation request has been submitted to the warehouse host.');
           this.router.navigate(['/my-bookings']);
         },
         error: (err) => {
-          alert(err.error?.message || 'Failed to complete booking');
+          this.processingPayment.set(false);
+          alert(err.error?.message || 'Payment verification failed.');
         },
       });
   }

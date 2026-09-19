@@ -54,11 +54,36 @@ const bookingSchema = new mongoose.Schema(
       default: BOOKING_STATUS.PENDING,
       index: true,
     },
-    cancellationReason: {
+    paymentStatus: {
+      type: String,
+      enum: ['UNPAID', 'HELD_IN_ESCROW', 'DISBURSED', 'REFUNDED'],
+      default: 'UNPAID',
+      index: true,
+    },
+    paymentProvider: {
+      type: String,
+      default: 'RAZORPAY',
+    },
+    paymentId: {
       type: String,
       default: '',
     },
-    paymentId: {
+    orderId: {
+      type: String,
+      default: '',
+    },
+    platformCommission: {
+      type: Number,
+      default: 0,
+    },
+    hostPayoutAmount: {
+      type: Number,
+      default: 0,
+    },
+    paidAt: {
+      type: Date,
+    },
+    cancellationReason: {
       type: String,
       default: '',
     },

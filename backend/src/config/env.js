@@ -9,4 +9,7 @@ export const config = {
   jwtSecret: process.env.JWT_SECRET || 'dev_secret_jwt_key_should_be_changed_in_prod',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
   bcryptSaltRounds: parseInt(process.env.BCRYPT_SALT_ROUNDS, 10) || 10,
+  razorpayKeyId: process.env.RAZORPAY_KEY_ID || 'rzp_test_warehousespace',
+  razorpayKeySecret: process.env.RAZORPAY_KEY_SECRET || 'rzp_test_secret_key_12345',
+  platformCommissionPercent: parseFloat(process.env.PLATFORM_COMMISSION_PERCENT) || 10,
 };
