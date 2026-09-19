@@ -59,3 +59,12 @@ export const updateStatus = async (req, res, next) => {
     next(error);
   }
 };
+
+export const getManagerRequests = async (req, res, next) => {
+  try {
+    const bookings = await bookingService.getBookingsForManager(req.user._id);
+    res.status(200).json(new ApiResponse(200, bookings, 'Host incoming booking requests retrieved'));
+  } catch (error) {
+    next(error);
+  }
+};

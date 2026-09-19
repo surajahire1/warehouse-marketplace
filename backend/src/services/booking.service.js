@@ -169,3 +169,16 @@ export const updateBookingStatus = async (bookingId, newStatus, userId, userRole
   await booking.save();
   return booking;
 };
+
+/**
+ * Retrieves all bookings placed on warehouses owned by a specific host/manager.
+ */
+export const getBookingsForManager = async (managerId) => {
+  const warehouses = await Warehouse.find({ managerId }).select('_id');
+  const warehouseIds = warehouses.map((w) => w._id);
+
+  return Booking.find({ warehouseId: { $in: warehouseIds } })
+    .populate('warehouseId', 'title address currency totalCapacity capacityUnit pricePerUnitPerDay')
+    .populate('customerId', 'name email phone')
+    .sort({ createdAt: -1 });
+};

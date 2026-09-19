@@ -26,6 +26,14 @@ router.post(
 
 router.get('/my-bookings', authenticate, bookingController.getMyBookings);
 
+// Host/Manager incoming reservation requests for their warehouses
+router.get(
+  '/manager/incoming-requests',
+  authenticate,
+  authorize(USER_ROLES.MANAGER, USER_ROLES.ADMIN),
+  bookingController.getManagerRequests
+);
+
 router.patch('/:id/status', authenticate, bookingController.updateStatus);
 
 export default router;
