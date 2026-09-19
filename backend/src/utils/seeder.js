@@ -38,6 +38,19 @@ export const seedInitialData = async () => {
       });
     }
 
+    // 3. Create or retrieve sample admin
+    let admin = await User.findOne({ email: 'admin@example.com' });
+    if (!admin) {
+      admin = await User.create({
+        name: 'Super Administrator',
+        email: 'admin@example.com',
+        password: 'adminpassword123',
+        role: USER_ROLES.ADMIN,
+        phone: '+91 98000 00000',
+        isVerified: true,
+      });
+    }
+
     // 3. Create prime Indian Logistics Hubs
     await Warehouse.create([
       {

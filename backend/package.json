@@ -7,6 +7,7 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "list:users": "node -e \"import('./src/config/db.js').then(m => m.connectDB()).then(async () => { const { User } = await import('./src/models/User.js'); const users = await User.find({}, 'name email role phone createdAt'); console.table(users.map(u => ({ id: u._id.toString(), name: u.name, email: u.email, role: u.role, phone: u.phone || 'N/A' }))); process.exit(0); })\"",
     "test": "echo \"Running tests...\" && exit 0"
   },
   "dependencies": {

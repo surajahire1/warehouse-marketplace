@@ -31,7 +31,8 @@ import { AuthService } from '../../../core/services/auth.service';
           }
 
           @if (authService.isAdmin()) {
-            <a routerLink="/admin/verifications" routerLinkActive="text-indigo-600 font-semibold" class="hover:text-gray-900 transition">Admin Portal</a>
+            <a routerLink="/admin/verifications" routerLinkActive="text-indigo-600 font-semibold" class="hover:text-gray-900 transition">Verifications</a>
+            <a routerLink="/admin/users" routerLinkActive="text-indigo-600 font-semibold" class="hover:text-gray-900 transition">All Users</a>
           }
         </nav>
 

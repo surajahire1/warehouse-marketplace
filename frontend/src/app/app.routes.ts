@@ -8,6 +8,7 @@ import { MyBookingsComponent } from './features/customer/my-bookings/my-bookings
 import { ManagerDashboardComponent } from './features/manager/dashboard/dashboard.component';
 import { WarehouseEditorComponent } from './features/manager/warehouse-editor/warehouse-editor.component';
 import { VerificationsComponent } from './features/admin/verifications/verifications.component';
+import { UsersComponent } from './features/admin/users/users.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
@@ -50,6 +51,11 @@ export const routes: Routes = [
     path: 'admin/verifications',
     component: VerificationsComponent,
     canActivate: [authGuard, roleGuard(['ADMIN'])],
+  },
+  {
+    path: 'admin/users',
+    component: UsersComponent,
+    canActivate: [authGuard, roleGuard(['ADMIN', 'MANAGER'])],
   },
 
   // Fallback
