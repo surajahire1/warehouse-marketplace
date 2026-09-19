@@ -36,3 +36,17 @@ export const getMyWarehouses = async (req, res, next) => {
     next(error);
   }
 };
+
+export const updateWarehouse = async (req, res, next) => {
+  try {
+    const updated = await warehouseService.updateWarehouseListing(
+      req.params.id,
+      req.user._id,
+      req.user.role,
+      req.body
+    );
+    res.status(200).json(new ApiResponse(200, updated, 'Warehouse updated successfully'));
+  } catch (error) {
+    next(error);
+  }
+};

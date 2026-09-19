@@ -124,10 +124,16 @@ import { CapacityGaugeComponent } from '../../../shared/components/capacity-gaug
                   </div>
                 </div>
 
-                <div class="flex items-center gap-3 w-full md:w-auto justify-end">
+                <div class="flex items-center gap-2 w-full md:w-auto justify-end">
+                  <a 
+                    [routerLink]="['/manager/warehouses', item._id, 'edit']" 
+                    class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg transition border border-indigo-200"
+                  >
+                    ✏️ Edit Listing & Photos
+                  </a>
                   <a 
                     [routerLink]="['/warehouses', item._id]" 
-                    class="px-3.5 py-1.5 border border-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-white transition shadow-sm"
+                    class="px-3 py-1.5 border border-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition shadow-sm"
                   >
                     View Public Page
                   </a>

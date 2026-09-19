@@ -117,3 +117,44 @@ export const getWarehouseById = async (id) => {
 export const getManagerWarehouses = async (managerId) => {
   return Warehouse.find({ managerId }).sort({ createdAt: -1 });
 };
+
+export const updateWarehouseListing = async (warehouseId, managerId, userRole, updateData) => {
+  const warehouse = await Warehouse.findById(warehouseId);
+  if (!warehouse) {
+    throw new ApiError(404, 'Warehouse not found');
+  }
+
+  // Authorization check: Only the manager who owns the warehouse or an admin can edit it
+  if (userRole !== 'ADMIN' && warehouse.managerId.toString() !== managerId.toString()) {
+    throw new ApiError(403, 'You are not authorized to edit this warehouse listing');
+  }
+
+  if (updateData.latitude !== undefined && updateData.longitude !== undefined) {
+    warehouse.location = {
+      type: 'Point',
+      coordinates: [updateData.longitude, updateData.latitude],
+    };
+  }
+
+  const allowedFields = [
+    'title',
+    'description',
+    'address',
+    'totalCapacity',
+    'capacityUnit',
+    'pricePerUnitPerDay',
+    'minBookingDays',
+    'amenities',
+    'images',
+    'isActive',
+  ];
+
+  allowedFields.forEach((field) => {
+    if (updateData[field] !== undefined) {
+      warehouse[field] = updateData[field];
+    }
+  });
+
+  await warehouse.save();
+  return warehouse;
+};

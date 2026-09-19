@@ -29,4 +29,11 @@ router.post(
   warehouseController.createWarehouse
 );
 
+router.put(
+  '/:id',
+  authenticate,
+  authorize(USER_ROLES.MANAGER, USER_ROLES.ADMIN),
+  warehouseController.updateWarehouse
+);
+
 export default router;

@@ -39,6 +39,11 @@ export const routes: Routes = [
     component: WarehouseEditorComponent,
     canActivate: [authGuard, roleGuard(['MANAGER', 'ADMIN'])],
   },
+  {
+    path: 'manager/warehouses/:id/edit',
+    component: WarehouseEditorComponent,
+    canActivate: [authGuard, roleGuard(['MANAGER', 'ADMIN'])],
+  },
 
   // Admin Routes
   {
