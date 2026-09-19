@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: warehouse_mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: warehouse_db
+    volumes:
+      - mongo_data:/data/db
+
+  backend:
+    build: ./backend
+    container_name: warehouse_backend
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      PORT: 5000
+      NODE_ENV: development
+      MONGO_URI: mongodb://mongodb:27017/warehouse_db
+      JWT_SECRET: super_secret_jwt_key_for_dev_mode_change_in_prod
+      JWT_EXPIRES_IN: 7d
+    depends_on:
+      - mongodb
+
+volumes:
+  mongo_data:
