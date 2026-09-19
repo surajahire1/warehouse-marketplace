@@ -14,4 +14,19 @@ router.get(
   adminController.getAllUsers
 );
 
+// Review & verify warehouse listings
+router.get(
+  '/warehouses/pending',
+  authenticate,
+  authorize(USER_ROLES.ADMIN),
+  adminController.getPendingWarehouses
+);
+
+router.patch(
+  '/warehouses/:id/verification',
+  authenticate,
+  authorize(USER_ROLES.ADMIN),
+  adminController.verifyWarehouse
+);
+
 export default router;
