@@ -49,7 +49,7 @@ const warehouseSchema = new mongoose.Schema(
       city: { type: String, required: true, index: true },
       state: { type: String, required: true },
       postalCode: { type: String, required: true },
-      country: { type: String, required: true, default: 'US' },
+      country: { type: String, required: true, default: 'India' },
     },
     totalCapacity: {
       type: Number,
@@ -60,6 +60,12 @@ const warehouseSchema = new mongoose.Schema(
       type: String,
       enum: Object.values(CAPACITY_UNITS),
       default: CAPACITY_UNITS.SQFT,
+      required: true,
+    },
+    currency: {
+      type: String,
+      enum: ['INR', 'USD'],
+      default: 'INR',
       required: true,
     },
     pricePerUnitPerDay: {

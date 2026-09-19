@@ -58,7 +58,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                       {{ booking.quantityBooked }}
                     </td>
                     <td class="px-6 py-4 font-bold text-gray-900">
-                      \${{ booking.totalAmount }}
+                      {{ booking.currency === 'USD' ? '$' : '₹' }}{{ booking.totalAmount }}
                     </td>
                     <td class="px-6 py-4">
                       <app-status-badge [status]="booking.status" />

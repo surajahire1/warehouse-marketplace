@@ -37,6 +37,12 @@ const bookingSchema = new mongoose.Schema(
       required: [true, 'Quantity booked is required'],
       min: [1, 'Quantity booked must be at least 1'],
     },
+    currency: {
+      type: String,
+      enum: ['INR', 'USD'],
+      default: 'INR',
+      required: true,
+    },
     totalAmount: {
       type: Number,
       required: [true, 'Total amount is required'],

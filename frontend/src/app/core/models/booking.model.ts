@@ -9,6 +9,7 @@ export interface Booking {
   startDate: string;
   endDate: string;
   quantityBooked: number;
+  currency?: 'INR' | 'USD';
   totalAmount: number;
   status: BookingStatus;
   cancellationReason?: string;

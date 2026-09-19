@@ -38,7 +38,7 @@ import { CapacityGaugeComponent } from '../../../shared/components/capacity-gaug
                   <div class="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Photo Provided</div>
                 }
                 <span class="absolute top-3 right-3 bg-white/90 backdrop-blur px-2.5 py-1 rounded-md text-xs font-bold text-gray-900 shadow">
-                  \${{ warehouse.pricePerUnitPerDay }}/{{ warehouse.capacityUnit }}/day
+                  {{ warehouse.currency === 'USD' ? '$' : '₹' }}{{ warehouse.pricePerUnitPerDay }}/{{ warehouse.capacityUnit }}/day
                 </span>
               </div>
 

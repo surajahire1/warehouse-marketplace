@@ -5,7 +5,7 @@ import { Router, RouterLink, ActivatedRoute } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../../../environments/environment';
 import { ApiResponse } from '../../../core/models/api-response.model';
-import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
+import { Warehouse, CapacityUnit, Currency } from '../../../core/models/warehouse.model';
 
 @Component({
   selector: 'app-warehouse-editor',
@@ -47,7 +47,7 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
                   [(ngModel)]="title" 
                   name="title" 
                   required 
-                  placeholder="e.g. O'Hare Logistics Center Bay 4" 
+                  placeholder="e.g. Bhiwandi Grade-A Logistics Park" 
                   class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                 />
               </div>
@@ -76,7 +76,7 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
                   [(ngModel)]="address.street" 
                   name="street" 
                   required 
-                  placeholder="123 Industrial Parkway" 
+                  placeholder="Plot 45-B, Mumbai-Nashik Expressway, Mankoli Naka" 
                   class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                 />
               </div>
@@ -87,7 +87,7 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
                   [(ngModel)]="address.city" 
                   name="city" 
                   required 
-                  placeholder="Chicago" 
+                  placeholder="Bhiwandi" 
                   class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                 />
               </div>
@@ -98,18 +98,18 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
                   [(ngModel)]="address.state" 
                   name="state" 
                   required 
-                  placeholder="IL" 
+                  placeholder="Maharashtra" 
                   class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                 />
               </div>
               <div>
-                <label class="block text-xs font-semibold text-gray-700">Postal / ZIP Code *</label>
+                <label class="block text-xs font-semibold text-gray-700">Postal / PIN Code *</label>
                 <input 
                   type="text" 
                   [(ngModel)]="address.postalCode" 
                   name="postalCode" 
                   required 
-                  placeholder="60601" 
+                  placeholder="421302" 
                   class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                 />
               </div>
@@ -120,7 +120,7 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
                   [(ngModel)]="address.country" 
                   name="country" 
                   required 
-                  placeholder="US" 
+                  placeholder="India" 
                   class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                 />
               </div>
@@ -147,7 +147,7 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
                     [(ngModel)]="latitude" 
                     name="latitude" 
                     required 
-                    placeholder="41.8781" 
+                    placeholder="19.2967" 
                     class="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                   />
                 </div>
@@ -159,7 +159,7 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
                     [(ngModel)]="longitude" 
                     name="longitude" 
                     required 
-                    placeholder="-87.6298" 
+                    placeholder="73.0631" 
                     class="w-full mt-1 px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                   />
                 </div>
@@ -167,10 +167,10 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
             </div>
           </div>
 
-          <!-- Section 3: Capacity & Pricing -->
+          <!-- Section 3: Capacity & Pricing with Currency Options -->
           <div>
             <h2 class="text-base font-bold text-gray-900 mb-4 pb-2 border-b border-gray-100">3. Capacity & Rental Pricing</h2>
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div>
                 <label class="block text-xs font-semibold text-gray-700">Total Capacity *</label>
                 <input 
@@ -179,7 +179,7 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
                   name="totalCapacity" 
                   min="1"
                   required 
-                  placeholder="e.g. 25000" 
+                  placeholder="35000" 
                   class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                 />
               </div>
@@ -196,7 +196,18 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
                 </select>
               </div>
               <div>
-                <label class="block text-xs font-semibold text-gray-700">Daily Rate (\$) *</label>
+                <label class="block text-xs font-semibold text-gray-700">Billing Currency *</label>
+                <select 
+                  [(ngModel)]="currency" 
+                  name="currency" 
+                  class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-white font-semibold text-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                >
+                  <option value="INR">₹ INR (Indian Rupee)</option>
+                  <option value="USD">$ USD (US Dollar)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-semibold text-gray-700">Daily Rate ({{ currency === 'USD' ? '$' : '₹' }}) *</label>
                 <input 
                   type="number" 
                   step="0.01"
@@ -204,21 +215,21 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
                   name="pricePerUnitPerDay" 
                   min="0.01"
                   required 
-                  placeholder="0.85" 
+                  placeholder="25.50" 
                   class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                 />
               </div>
-              <div>
-                <label class="block text-xs font-semibold text-gray-700">Min. Booking Days</label>
-                <input 
-                  type="number" 
-                  [(ngModel)]="minBookingDays" 
-                  name="minBookingDays" 
-                  min="1"
-                  required 
-                  class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
-                />
-              </div>
+            </div>
+            <div class="mt-4 w-full sm:w-1/2">
+              <label class="block text-xs font-semibold text-gray-700">Min. Booking Days</label>
+              <input 
+                type="number" 
+                [(ngModel)]="minBookingDays" 
+                name="minBookingDays" 
+                min="1"
+                required 
+                class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
+              />
             </div>
           </div>
 
@@ -249,7 +260,7 @@ import { Warehouse, CapacityUnit } from '../../../core/models/warehouse.model';
             </div>
             
             <p class="text-xs text-gray-500 mb-4">
-              Add new image links or remove outdated ones below. You can change photos anytime after publishing.
+              Add image links or remove outdated ones below. You can change photos anytime after publishing.
             </p>
 
             <div class="flex gap-2 mb-4">
@@ -327,19 +338,20 @@ export class WarehouseEditorComponent implements OnInit {
 
   title = '';
   description = '';
-  latitude: number = 41.8781;
-  longitude: number = -87.6298;
+  latitude: number = 19.2967;
+  longitude: number = 73.0631;
   address = {
     street: '',
-    city: '',
-    state: '',
-    postalCode: '',
-    country: 'US',
+    city: 'Bhiwandi',
+    state: 'Maharashtra',
+    postalCode: '421302',
+    country: 'India',
   };
-  totalCapacity: number = 20000;
+  totalCapacity: number = 35000;
   capacityUnit: CapacityUnit = 'SQFT';
-  pricePerUnitPerDay: number = 0.85;
-  minBookingDays: number = 1;
+  currency: Currency = 'INR';
+  pricePerUnitPerDay: number = 25.50;
+  minBookingDays: number = 7;
 
   availableAmenities: string[] = [
     '24/7 Security',
@@ -355,7 +367,7 @@ export class WarehouseEditorComponent implements OnInit {
     'Rail Access',
     'Heavy Floor Load',
   ];
-  selectedAmenities: string[] = ['24/7 Security', 'Loading Docks', 'Forklift On-Site'];
+  selectedAmenities: string[] = ['24/7 Security', 'Loading Docks', 'Forklift On-Site', 'CCTV 24/7'];
 
   images: string[] = [
     'https://images.unsplash.com/photo-1586528116311-ad8dd3c8310d?auto=format&fit=crop&w=1200&q=80',
@@ -394,6 +406,7 @@ export class WarehouseEditorComponent implements OnInit {
         }
         this.totalCapacity = w.totalCapacity;
         this.capacityUnit = w.capacityUnit;
+        this.currency = w.currency || 'INR';
         this.pricePerUnitPerDay = w.pricePerUnitPerDay;
         this.minBookingDays = w.minBookingDays;
         this.selectedAmenities = w.amenities || [];
@@ -458,6 +471,7 @@ export class WarehouseEditorComponent implements OnInit {
       address: this.address,
       totalCapacity: Number(this.totalCapacity),
       capacityUnit: this.capacityUnit,
+      currency: this.currency,
       pricePerUnitPerDay: Number(this.pricePerUnitPerDay),
       minBookingDays: Number(this.minBookingDays),
       amenities: this.selectedAmenities,

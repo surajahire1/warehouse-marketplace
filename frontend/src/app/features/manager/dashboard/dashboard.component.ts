@@ -119,7 +119,7 @@ import { CapacityGaugeComponent } from '../../../shared/components/capacity-gaug
                     </div>
                     <p class="text-xs text-gray-500 mt-1">📍 {{ item.address.city }}, {{ item.address.state }}</p>
                     <p class="text-xs text-gray-700 mt-1 font-medium">
-                      {{ item.totalCapacity.toLocaleString() }} {{ item.capacityUnit }} • \${{ item.pricePerUnitPerDay }}/day
+                      {{ item.totalCapacity.toLocaleString() }} {{ item.capacityUnit }} • {{ item.currency === 'USD' ? '$' : '₹' }}{{ item.pricePerUnitPerDay }}/day
                     </p>
                   </div>
                 </div>

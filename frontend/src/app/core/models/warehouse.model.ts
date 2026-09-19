@@ -1,5 +1,6 @@
 export type CapacityUnit = 'SQFT' | 'PALLET' | 'CUBIC_METER';
 export type VerificationStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+export type Currency = 'INR' | 'USD';
 
 export interface GeoLocation {
   type: 'Point';
@@ -23,6 +24,7 @@ export interface Warehouse {
   address: Address;
   totalCapacity: number;
   capacityUnit: CapacityUnit;
+  currency: Currency;
   pricePerUnitPerDay: number;
   minBookingDays: number;
   amenities: string[];
@@ -37,6 +39,7 @@ export interface AvailabilityResult {
   warehouseId: string;
   warehouseTitle: string;
   capacityUnit: CapacityUnit;
+  currency: Currency;
   totalCapacity: number;
   peakOccupied: number;
   availableCapacity: number;

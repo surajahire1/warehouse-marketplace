@@ -28,7 +28,7 @@ import { FormsModule } from '@angular/forms';
             <input 
               type="text" 
               [(ngModel)]="searchCity" 
-              placeholder="e.g. Chicago, Dallas, Newark" 
+              placeholder="e.g. Mumbai, Bhiwandi, Gurugram, Bengaluru" 
               class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
           </div>

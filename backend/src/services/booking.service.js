@@ -95,6 +95,7 @@ export const checkWarehouseAvailability = async (warehouseId, startDateStr, endD
     warehouseId: warehouse._id,
     warehouseTitle: warehouse.title,
     capacityUnit: warehouse.capacityUnit,
+    currency: warehouse.currency || 'INR',
     totalCapacity: warehouse.totalCapacity,
     peakOccupied,
     availableCapacity,
@@ -132,6 +133,7 @@ export const createBooking = async (customerId, bookingData) => {
     startDate: new Date(startDate),
     endDate: new Date(endDate),
     quantityBooked,
+    currency: availability.currency,
     totalAmount: availability.estimatedTotal,
     status: BOOKING_STATUS.PENDING,
   });

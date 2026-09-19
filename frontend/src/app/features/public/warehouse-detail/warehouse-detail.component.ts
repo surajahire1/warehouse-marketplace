@@ -61,7 +61,9 @@ import { AuthService } from '../../../core/services/auth.service';
           <div class="lg:col-span-1">
             <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm sticky top-24 space-y-5">
               <div class="flex justify-between items-baseline border-b border-gray-100 pb-4">
-                <span class="text-2xl font-black text-gray-900">\${{ warehouse()!.pricePerUnitPerDay }}</span>
+                <span class="text-2xl font-black text-gray-900">
+                  {{ warehouse()!.currency === 'USD' ? '$' : '₹' }}{{ warehouse()!.pricePerUnitPerDay }}
+                </span>
                 <span class="text-xs text-gray-500">per {{ warehouse()!.capacityUnit }} / day</span>
               </div>
 
@@ -123,7 +125,7 @@ import { AuthService } from '../../../core/services/auth.service';
                   @if (availabilityResult()!.isAvailable) {
                     <div class="pt-2 border-t border-emerald-200 flex justify-between font-bold text-sm text-emerald-950">
                       <span>Total Estimated:</span>
-                      <span>\${{ availabilityResult()!.estimatedTotal }}</span>
+                      <span>{{ availabilityResult()!.currency === 'USD' ? '$' : '₹' }}{{ availabilityResult()!.estimatedTotal }}</span>
                     </div>
                   }
                 </div>
