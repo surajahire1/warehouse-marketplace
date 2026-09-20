@@ -259,31 +259,34 @@ export class WarehouseMapComponent implements AfterViewInit, OnChanges, OnDestro
             : '';
 
         const popupHtml = `
-          <div class="w-64 p-3 bg-white font-sans text-left">
-            <div class="h-28 rounded-lg overflow-hidden bg-gray-100 mb-2 border border-gray-100 relative">
+          <div class="w-72 p-3.5 bg-white font-sans text-left">
+            <div class="h-32 rounded-xl overflow-hidden bg-gray-100 mb-2.5 border border-gray-100 relative">
               <img src="${photoUrl}" alt="${wh.title}" class="w-full h-full object-cover" />
-              <span class="absolute top-2 right-2 bg-white/90 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-gray-900 shadow-sm">
+              <span class="absolute top-2 right-2 bg-white/95 backdrop-blur px-2.5 py-1 rounded-md text-[11px] font-bold text-gray-900 shadow-sm">
                 ${currSymbol}${wh.pricePerUnitPerDay}/${wh.capacityUnit}
               </span>
             </div>
-            <div class="font-bold text-xs text-gray-900 leading-tight mb-1">${wh.title}</div>
-            <div class="text-[11px] text-gray-500 mb-2 flex items-center justify-between">
-              <span>📍 ${wh.address.city}, ${wh.address.state}</span>
+
+            <h4 class="font-bold text-sm text-gray-900 leading-snug mb-1 line-clamp-1">${wh.title}</h4>
+
+            <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
+              <span class="flex items-center gap-1">📍 ${wh.address.city}, ${wh.address.state}</span>
               ${distanceBadge}
             </div>
-            <div class="text-[11px] text-gray-600 mb-2 font-medium">
-              Capacity: ${wh.totalCapacity.toLocaleString()} ${wh.capacityUnit}
+
+            <div class="text-xs text-gray-600 mb-3 bg-gray-50 p-2 rounded-lg border border-gray-100 flex items-center justify-between">
+              <span class="text-gray-500">Available Space:</span>
+              <strong class="text-gray-900 font-bold">${wh.totalCapacity.toLocaleString()} ${wh.capacityUnit}</strong>
             </div>
-            <div class="pt-2 border-t border-gray-100 flex items-center justify-between">
-              <span class="text-xs font-bold text-indigo-600">${currSymbol}${wh.pricePerUnitPerDay}/day</span>
-              <a href="/warehouses/${wh._id}" class="px-3 py-1 bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] font-bold rounded-lg shadow-sm transition">
-                Reserve ➔
-              </a>
-            </div>
+
+            <a href="/warehouses/${wh._id}" class="popup-reserve-btn">
+              <span>Reserve Space</span>
+              <span>➔</span>
+            </a>
           </div>
         `;
 
-        marker.bindPopup(popupHtml, { maxWidth: 280, minWidth: 260 });
+        marker.bindPopup(popupHtml, { maxWidth: 300, minWidth: 280 });
 
         marker.on('click', () => {
           this.warehouseSelected.emit(wh._id);

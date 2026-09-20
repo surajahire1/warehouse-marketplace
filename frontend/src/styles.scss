@@ -128,3 +128,31 @@ body {
   background: #ffffff !important;
 }
 
+/* Leaflet Popup CTA Button - high contrast override */
+.leaflet-container a.popup-reserve-btn,
+a.popup-reserve-btn {
+  color: #ffffff !important;
+  text-decoration: none !important;
+  background-color: #4f46e5 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 6px !important;
+  padding: 9px 16px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  border-radius: 10px !important;
+  box-shadow: 0 2px 6px rgba(79, 70, 229, 0.35) !important;
+  transition: all 0.15s ease-in-out !important;
+  width: 100% !important;
+  text-align: center !important;
+  cursor: pointer !important;
+
+  &:hover {
+    background-color: #4338ca !important;
+    color: #ffffff !important;
+    transform: translateY(-1px) !important;
+    box-shadow: 0 4px 10px rgba(79, 70, 229, 0.45) !important;
+  }
+}
+
