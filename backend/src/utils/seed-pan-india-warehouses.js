@@ -2,6 +2,8 @@ import mongoose from 'mongoose';
 import { config } from '../config/env.js';
 import { User, USER_ROLES } from '../models/User.js';
 import { Warehouse, CAPACITY_UNITS, VERIFICATION_STATUS } from '../models/Warehouse.js';
+import { Booking, BOOKING_STATUS } from '../models/Booking.js';
+import { Review } from '../models/Review.js';
 
 const panIndiaWarehouses = [
   {
@@ -413,23 +415,152 @@ async function runSeed() {
     const deletedCount = await Warehouse.deleteMany({});
     console.log(`[Seed Script] Cleared ${deletedCount.deletedCount} old warehouses.`);
 
-    // Insert all 16 Pan-India warehouses under this single manager
+    // Insert all Pan-India warehouses under this single manager
     const warehousesToInsert = panIndiaWarehouses.map((wh) => ({
       ...wh,
       managerId: manager._id,
       verificationStatus: VERIFICATION_STATUS.APPROVED,
       isActive: true,
+      averageRating: 0,
+      reviewCount: 0,
     }));
 
     const inserted = await Warehouse.insertMany(warehousesToInsert);
     console.log(`[Seed Script] Successfully seeded ${inserted.length} Pan-India warehouses across 14 states!`);
 
-    for (const w of inserted) {
-      console.log(`  ✓ ${w.title} (${w.address.city}, ${w.address.state}) - [${w.location.coordinates[0]}, ${w.location.coordinates[1]}]`);
+    // Find or prepare customer accounts
+    let customer1 = await User.findOne({ email: 'suraj@gmail.com' });
+    let customer2 = await User.findOne({ email: 'customer@example.com' });
+
+    if (!customer2 && !customer1) {
+      customer2 = await User.create({
+        name: 'OmniRetail Shippers Ltd',
+        email: 'customer@example.com',
+        password: 'password123',
+        role: USER_ROLES.CUSTOMER,
+        phone: '+91 98201 12345',
+      });
+    }
+
+    const primaryCustomer = customer1 || customer2;
+    const secondaryCustomer = customer2 || customer1;
+
+    // Sample commercial reviews data
+    const sampleReviewsData = [
+      {
+        overallRating: 5,
+        dockSpeedRating: 5,
+        securityRating: 5,
+        cleanlinessRating: 5,
+        hostResponsivenessRating: 5,
+        facilityTypeUsed: 'High-Bay Pallet Racking',
+        comment: 'Outstanding FM2 laser-screed flooring and super fast 20-minute turnaround for our 40-ft container trailers. 24/7 security gate and weighbridge are very professional.',
+      },
+      {
+        overallRating: 5,
+        dockSpeedRating: 4,
+        securityRating: 5,
+        cleanlinessRating: 5,
+        hostResponsivenessRating: 5,
+        facilityTypeUsed: 'Industrial Engineering Spares',
+        comment: 'Excellent 36ft clear height and overhead crane availability. The host manager was extremely responsive during off-hours check-in.',
+      },
+      {
+        overallRating: 4,
+        dockSpeedRating: 4,
+        securityRating: 5,
+        cleanlinessRating: 4,
+        hostResponsivenessRating: 5,
+        facilityTypeUsed: 'FMCG Distribution Staging',
+        comment: 'Very reliable facility with NFPA sprinkler compliance and high-density racking. Good wide aprons for easy truck turning.',
+      },
+      {
+        overallRating: 5,
+        dockSpeedRating: 5,
+        securityRating: 5,
+        cleanlinessRating: 5,
+        hostResponsivenessRating: 4,
+        facilityTypeUsed: 'Multi-Temp Cold Logistics',
+        comment: 'Temperature integrity was maintained throughout our pharmaceutical staging. Backup generators kicked in seamlessly during grid fluctuation.',
+      },
+    ];
+
+    // Seed verified bookings and reviews for top warehouses
+    console.log('[Seed Script] Seeding verified bookings & commercial ratings...');
+    for (let i = 0; i < inserted.length; i++) {
+      const wh = inserted[i];
+      const numReviews = i < 6 ? 3 : (i % 2 === 0 ? 2 : 1);
+      let ratingSum = 0;
+
+      for (let r = 0; r < numReviews; r++) {
+        const reviewTemplate = sampleReviewsData[(i + r) % sampleReviewsData.length];
+        const reviewer = r % 2 === 0 ? primaryCustomer : secondaryCustomer;
+
+        const bookingStartDate = new Date(Date.now() - (30 + r * 10) * 24 * 60 * 60 * 1000);
+        const bookingEndDate = new Date(bookingStartDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+
+        const booking = await Booking.create({
+          warehouseId: wh._id,
+          customerId: reviewer._id,
+          startDate: bookingStartDate,
+          endDate: bookingEndDate,
+          quantityBooked: 2500,
+          currency: wh.currency || 'INR',
+          totalAmount: 2500 * (wh.pricePerUnitPerDay || 25) * 14,
+          status: BOOKING_STATUS.CONFIRMED,
+          paymentStatus: 'DISBURSED',
+          paymentId: `pay_seed_${wh._id.toString().substring(0, 6)}_${r}`,
+        });
+
+        await Review.create({
+          warehouseId: wh._id,
+          customerId: reviewer._id,
+          bookingId: booking._id,
+          overallRating: reviewTemplate.overallRating,
+          dockSpeedRating: reviewTemplate.dockSpeedRating,
+          securityRating: reviewTemplate.securityRating,
+          cleanlinessRating: reviewTemplate.cleanlinessRating,
+          hostResponsivenessRating: reviewTemplate.hostResponsivenessRating,
+          facilityTypeUsed: reviewTemplate.facilityTypeUsed,
+          comment: reviewTemplate.comment,
+          verifiedBooking: true,
+          createdAt: new Date(bookingEndDate.getTime() + 2 * 24 * 60 * 60 * 1000),
+        });
+
+        ratingSum += reviewTemplate.overallRating;
+      }
+
+      const avg = Math.round((ratingSum / numReviews) * 10) / 10;
+      await Warehouse.findByIdAndUpdate(wh._id, {
+        averageRating: avg,
+        reviewCount: numReviews,
+      });
+
+      console.log(`  ✓ ${wh.title}: ⭐ ${avg} (${numReviews} reviews)`);
+    }
+
+    // Also create 1 unreviewed active confirmed booking for primaryCustomer (Suraj Ahire) so they can test reviewing right away!
+    if (inserted.length > 0) {
+      const testWh = inserted[0];
+      const activeStart = new Date();
+      const activeEnd = new Date(Date.now() + 10 * 24 * 60 * 60 * 1000);
+      await Booking.create({
+        warehouseId: testWh._id,
+        customerId: primaryCustomer._id,
+        startDate: activeStart,
+        endDate: activeEnd,
+        quantityBooked: 3000,
+        currency: testWh.currency || 'INR',
+        totalAmount: 3000 * testWh.pricePerUnitPerDay * 10,
+        status: BOOKING_STATUS.CONFIRMED,
+        paymentStatus: 'HELD_IN_ESCROW',
+        paymentId: `pay_ready_to_review_${Date.now()}`,
+      });
+      console.log(`  ⚡ Created ready-to-review confirmed booking for ${primaryCustomer.name} on ${testWh.title}`);
     }
 
     await mongoose.disconnect();
-    console.log('[Seed Script] Done!');
+    console.log('[Seed Script] All Pan-India Warehouses & Verified Reviews Seeded Successfully!');
     process.exit(0);
   } catch (err) {
     console.error('[Seed Script Error]', err);

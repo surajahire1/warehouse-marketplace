@@ -9,6 +9,8 @@ import { ApiResponse } from '../../../core/models/api-response.model';
 import { CapacityGaugeComponent } from '../../../shared/components/capacity-gauge/capacity-gauge.component';
 import { InquiryDrawerComponent } from '../../../shared/components/inquiry-drawer/inquiry-drawer.component';
 import { AuthService } from '../../../core/services/auth.service';
+import { ReviewService } from '../../../core/services/review.service';
+import { WarehouseReviewsResponse } from '../../../core/models/review.model';
 
 declare var window: any;
 
@@ -25,9 +27,22 @@ declare var window: any;
           <!-- Main Content -->
           <div class="lg:col-span-2 space-y-6">
             <div>
-              <span class="text-xs font-semibold uppercase text-indigo-600 tracking-wider">
-                {{ warehouse()!.capacityUnit }} Storage • {{ warehouse()!.currency }}
-              </span>
+              <div class="flex flex-wrap items-center gap-3 mb-1">
+                <span class="text-xs font-semibold uppercase text-indigo-600 tracking-wider">
+                  {{ warehouse()!.capacityUnit }} Storage • {{ warehouse()!.currency }}
+                </span>
+                @if (warehouse()!.reviewCount && warehouse()!.reviewCount! > 0) {
+                  <a href="#reviews-section" class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-50 text-amber-900 border border-amber-200 shadow-2xs hover:bg-amber-100 transition cursor-pointer">
+                    <span class="text-amber-500">★</span>
+                    <span>{{ warehouse()!.averageRating }}</span>
+                    <span class="text-amber-700 font-normal">({{ warehouse()!.reviewCount }} verified review{{ warehouse()!.reviewCount! > 1 ? 's' : '' }})</span>
+                  </a>
+                } @else {
+                  <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                    ⭐ New Facility
+                  </span>
+                }
+              </div>
               <h1 class="text-3xl font-extrabold text-gray-900 mt-1">{{ warehouse()!.title }}</h1>
               <p class="text-sm text-gray-500 mt-2">
                 📍 {{ warehouse()!.address.street }}, {{ warehouse()!.address.city }}, {{ warehouse()!.address.state }} {{ warehouse()!.address.postalCode }}, {{ warehouse()!.address.country }}
@@ -107,6 +122,165 @@ declare var window: any;
                 <span>💬</span>
                 <span>Ask Host a Question</span>
               </button>
+            </div>
+
+            <!-- Verified Facility Reviews & Operational Breakdown Section -->
+            <div id="reviews-section" class="pt-6 border-t border-gray-200 space-y-6">
+              <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h2 class="text-xl font-bold text-gray-900">Verified Customer Reviews</h2>
+                    <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-200">
+                      ✓ Verified Shippers Only
+                    </span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-1">
+                    Operational ratings submitted by shippers who booked and stored cargo at this facility.
+                  </p>
+                </div>
+              </div>
+
+              @if (loadingReviews()) {
+                <div class="py-10 text-center text-xs text-gray-400">Loading verified reviews...</div>
+              } @else if (reviewsData() && reviewsData()!.summary.totalReviews > 0) {
+                <!-- Operational Breakdown Summary Card -->
+                <div class="bg-gray-50/80 rounded-2xl p-6 border border-gray-200/90 shadow-2xs">
+                  <div class="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+                    
+                    <!-- Left: Overall Rating -->
+                    <div class="md:col-span-4 text-center md:border-r md:border-gray-200 md:pr-6">
+                      <div class="text-5xl font-black text-gray-900 tracking-tight">
+                        {{ reviewsData()!.summary.averageRating.toFixed(1) }}
+                      </div>
+                      <div class="flex items-center justify-center gap-1 text-amber-400 text-xl my-1.5">
+                        @for (s of [1, 2, 3, 4, 5]; track s) {
+                          <span>{{ s <= round(reviewsData()!.summary.averageRating) ? '★' : '☆' }}</span>
+                        }
+                      </div>
+                      <div class="text-xs font-semibold text-gray-600">
+                        Based on {{ reviewsData()!.summary.totalReviews }} verified reservation{{ reviewsData()!.summary.totalReviews > 1 ? 's' : '' }}
+                      </div>
+                      <div class="mt-2 inline-flex items-center gap-1 text-[11px] text-emerald-700 font-bold bg-emerald-50 px-2.5 py-0.5 rounded-md border border-emerald-200">
+                        🛡️ Escrow Verified
+                      </div>
+                    </div>
+
+                    <!-- Middle: Category Scores -->
+                    <div class="md:col-span-8 space-y-3">
+                      <h4 class="text-xs font-bold uppercase tracking-wider text-gray-500 mb-2">
+                        Operational Performance Metrics
+                      </h4>
+
+                      <!-- Dock Speed -->
+                      <div>
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                          <span class="text-gray-700 flex items-center gap-1">⚡ Dock Turnaround Speed</span>
+                          <span class="text-gray-900">{{ reviewsData()!.summary.categories.dockSpeed.toFixed(1) }} / 5.0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                          <div class="bg-amber-500 h-2 rounded-full transition-all duration-500" [style.width.%]="(reviewsData()!.summary.categories.dockSpeed / 5) * 100"></div>
+                        </div>
+                      </div>
+
+                      <!-- Security & CCTV -->
+                      <div>
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                          <span class="text-gray-700 flex items-center gap-1">🛡️ Security & 24/7 Surveillance</span>
+                          <span class="text-gray-900">{{ reviewsData()!.summary.categories.security.toFixed(1) }} / 5.0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                          <div class="bg-indigo-600 h-2 rounded-full transition-all duration-500" [style.width.%]="(reviewsData()!.summary.categories.security / 5) * 100"></div>
+                        </div>
+                      </div>
+
+                      <!-- Cleanliness -->
+                      <div>
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                          <span class="text-gray-700 flex items-center gap-1">🧹 Floor Loading & Cleanliness</span>
+                          <span class="text-gray-900">{{ reviewsData()!.summary.categories.cleanliness.toFixed(1) }} / 5.0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                          <div class="bg-emerald-600 h-2 rounded-full transition-all duration-500" [style.width.%]="(reviewsData()!.summary.categories.cleanliness / 5) * 100"></div>
+                        </div>
+                      </div>
+
+                      <!-- Host Responsiveness -->
+                      <div>
+                        <div class="flex justify-between text-xs font-semibold mb-1">
+                          <span class="text-gray-700 flex items-center gap-1">🤝 Host Responsiveness & Support</span>
+                          <span class="text-gray-900">{{ reviewsData()!.summary.categories.hostResponsiveness.toFixed(1) }} / 5.0</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                          <div class="bg-blue-600 h-2 rounded-full transition-all duration-500" [style.width.%]="(reviewsData()!.summary.categories.hostResponsiveness / 5) * 100"></div>
+                        </div>
+                      </div>
+
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Individual Reviews Feed -->
+                <div class="space-y-4">
+                  @for (review of reviewsData()!.reviews; track review._id) {
+                    <div class="p-5 bg-white rounded-2xl border border-gray-200 shadow-2xs space-y-3">
+                      <div class="flex items-start justify-between gap-4">
+                        <div class="flex items-center gap-3">
+                          <div class="w-10 h-10 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 font-bold flex items-center justify-center text-sm">
+                            {{ getCustomerInitials(review.customerId) }}
+                          </div>
+                          <div>
+                            <div class="flex items-center gap-2">
+                              <span class="text-sm font-bold text-gray-900">{{ getCustomerName(review.customerId) }}</span>
+                              <span class="px-2 py-0.5 bg-emerald-50 text-emerald-700 text-[10px] font-bold rounded-full border border-emerald-200">
+                                ✓ Verified Booking
+                              </span>
+                            </div>
+                            <span class="text-[11px] text-gray-400">
+                              Stored {{ review.facilityTypeUsed || 'Commercial Cargo' }} • Reviewed on {{ review.createdAt | date:'mediumDate' }}
+                            </span>
+                          </div>
+                        </div>
+
+                        <!-- Overall Stars -->
+                        <div class="flex items-center gap-1 text-amber-400 text-sm font-bold bg-amber-50 px-2.5 py-1 rounded-lg border border-amber-200">
+                          <span>★</span>
+                          <span class="text-amber-900">{{ review.overallRating }}.0</span>
+                        </div>
+                      </div>
+
+                      <!-- Operational Pill Tags -->
+                      <div class="flex flex-wrap gap-2 text-[11px]">
+                        <span class="px-2 py-0.5 bg-gray-50 border border-gray-200 rounded-md text-gray-600">
+                          ⚡ Dock: <strong>{{ review.dockSpeedRating }}★</strong>
+                        </span>
+                        <span class="px-2 py-0.5 bg-gray-50 border border-gray-200 rounded-md text-gray-600">
+                          🛡️ Security: <strong>{{ review.securityRating }}★</strong>
+                        </span>
+                        <span class="px-2 py-0.5 bg-gray-50 border border-gray-200 rounded-md text-gray-600">
+                          🧹 Cleanliness: <strong>{{ review.cleanlinessRating }}★</strong>
+                        </span>
+                        <span class="px-2 py-0.5 bg-gray-50 border border-gray-200 rounded-md text-gray-600">
+                          🤝 Host: <strong>{{ review.hostResponsivenessRating }}★</strong>
+                        </span>
+                      </div>
+
+                      <!-- Review Comment -->
+                      <p class="text-xs text-gray-700 leading-relaxed italic bg-gray-50/50 p-3.5 rounded-xl border border-gray-100">
+                        "{{ review.comment }}"
+                      </p>
+                    </div>
+                  }
+                </div>
+              } @else {
+                <!-- Empty State -->
+                <div class="p-8 bg-gray-50 rounded-2xl border border-dashed border-gray-200 text-center">
+                  <div class="text-3xl mb-2">⭐</div>
+                  <h4 class="text-sm font-bold text-gray-800">No verified reviews yet</h4>
+                  <p class="text-xs text-gray-500 max-w-md mx-auto mt-1">
+                    Bookings made at this facility will be able to leave operational ratings and dock feedback once confirmed.
+                  </p>
+                </div>
+              }
             </div>
           </div>
 
@@ -312,6 +486,7 @@ export class WarehouseDetailComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private http = inject(HttpClient);
   private router = inject(Router);
+  private reviewService = inject(ReviewService);
   authService = inject(AuthService);
 
   warehouse = signal<Warehouse | null>(null);
@@ -322,11 +497,30 @@ export class WarehouseDetailComponent implements OnInit {
   checking = signal<boolean>(false);
   processingPayment = signal<boolean>(false);
 
+  reviewsData = signal<WarehouseReviewsResponse | null>(null);
+  loadingReviews = signal<boolean>(false);
+
   startDate: string = '';
   endDate: string = '';
   todayDate: string = '';
   minEndDate: string = '';
   quantity: number = 5000;
+
+  round(val: number): number {
+    return Math.round(val || 0);
+  }
+
+  getCustomerName(customerId: any): string {
+    if (customerId && typeof customerId === 'object' && customerId.name) {
+      return customerId.name;
+    }
+    return 'Verified Shipper';
+  }
+
+  getCustomerInitials(customerId: any): string {
+    const name = this.getCustomerName(customerId);
+    return name ? name.substring(0, 2).toUpperCase() : 'VS';
+  }
 
   get managerDisplayName(): string {
     const mgr = this.warehouse()?.managerId;
@@ -374,7 +568,23 @@ export class WarehouseDetailComponent implements OnInit {
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.fetchWarehouse(id);
+      this.fetchReviews(id);
     }
+  }
+
+  fetchReviews(warehouseId: string) {
+    this.loadingReviews.set(true);
+    this.reviewService.getWarehouseReviews(warehouseId).subscribe({
+      next: (res) => {
+        if (res.data) {
+          this.reviewsData.set(res.data);
+        }
+        this.loadingReviews.set(false);
+      },
+      error: () => {
+        this.loadingReviews.set(false);
+      },
+    });
   }
 
   loadRazorpayScript() {

@@ -258,6 +258,10 @@ export class WarehouseMapComponent implements AfterViewInit, OnChanges, OnDestro
             ? `<span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">📍 ${wh.distanceKm} km away</span>`
             : '';
 
+        const ratingBadge = wh.averageRating
+          ? `<span class="inline-flex items-center gap-0.5 text-[11px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200 whitespace-nowrap">★ ${wh.averageRating.toFixed(1)} <span class="text-gray-500 font-normal">(${wh.reviewCount || 0})</span></span>`
+          : '';
+
         const popupHtml = `
           <div class="w-72 p-3.5 bg-white font-sans text-left">
             <div class="h-32 rounded-xl overflow-hidden bg-gray-100 mb-2.5 border border-gray-100 relative">
@@ -267,7 +271,10 @@ export class WarehouseMapComponent implements AfterViewInit, OnChanges, OnDestro
               </span>
             </div>
 
-            <h4 class="font-bold text-sm text-gray-900 leading-snug mb-1 line-clamp-1">${wh.title}</h4>
+            <div class="flex items-start justify-between gap-1 mb-1">
+              <h4 class="font-bold text-sm text-gray-900 leading-snug line-clamp-1">${wh.title}</h4>
+              ${ratingBadge}
+            </div>
 
             <div class="flex items-center justify-between text-xs text-gray-500 mb-2">
               <span class="flex items-center gap-1">📍 ${wh.address.city}, ${wh.address.state}</span>

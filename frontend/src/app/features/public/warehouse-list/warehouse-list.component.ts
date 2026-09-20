@@ -217,9 +217,16 @@ import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/
                         }
                       </div>
 
-                      <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
-                        <span>📍</span> {{ warehouse.address.city }}, {{ warehouse.address.state }}
-                      </p>
+                      <div class="flex items-center gap-2 mt-1 flex-wrap">
+                        <p class="text-xs text-gray-500 flex items-center gap-1">
+                          <span>📍</span> {{ warehouse.address.city }}, {{ warehouse.address.state }}
+                        </p>
+                        @if (warehouse.averageRating) {
+                          <span class="inline-flex items-center gap-0.5 text-[11px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">
+                            ★ {{ warehouse.averageRating.toFixed(1) }} <span class="text-gray-500 font-normal">({{ warehouse.reviewCount }})</span>
+                          </span>
+                        }
+                      </div>
 
                       <p class="text-xs text-gray-600 mt-2 line-clamp-2">{{ warehouse.description }}</p>
                     </div>
@@ -293,7 +300,14 @@ import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/
 
                 <div class="p-5 flex-1 flex flex-col justify-between">
                   <div>
-                    <h3 class="font-bold text-gray-900 text-base leading-tight">{{ warehouse.title }}</h3>
+                    <div class="flex items-start justify-between gap-2">
+                      <h3 class="font-bold text-gray-900 text-base leading-tight">{{ warehouse.title }}</h3>
+                      @if (warehouse.averageRating) {
+                        <span class="inline-flex items-center gap-0.5 text-xs font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 whitespace-nowrap">
+                          ★ {{ warehouse.averageRating.toFixed(1) }} <span class="text-gray-500 font-normal">({{ warehouse.reviewCount }})</span>
+                        </span>
+                      }
+                    </div>
                     
                     <div class="flex items-center gap-2 mt-1">
                       <p class="text-xs text-gray-500 flex items-center gap-1">

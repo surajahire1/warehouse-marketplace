@@ -6,11 +6,13 @@ import { environment } from '../../../../environments/environment';
 import { Booking } from '../../../core/models/booking.model';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { ReviewModalComponent } from '../../../shared/components/review-modal/review-modal.component';
+import { ReviewService } from '../../../core/services/review.service';
 
 @Component({
   selector: 'app-my-bookings',
   standalone: true,
-  imports: [CommonModule, RouterLink, StatusBadgeComponent],
+  imports: [CommonModule, RouterLink, StatusBadgeComponent, ReviewModalComponent],
   template: `
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
@@ -44,6 +46,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                   <th class="px-6 py-4">Amount</th>
                   <th class="px-6 py-4">Reservation</th>
                   <th class="px-6 py-4">Escrow Status</th>
+                  <th class="px-6 py-4 text-center">Review</th>
                   <th class="px-6 py-4 text-right">Receipt</th>
                 </tr>
               </thead>
@@ -83,6 +86,25 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                         <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
                           ⏳ Unpaid
                         </span>
+                      }
+                    </td>
+                    <td class="px-6 py-4 text-center">
+                      @if (isReviewable(booking)) {
+                        @if (hasReviewed(booking._id)) {
+                          <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            ✓ Reviewed
+                          </span>
+                        } @else {
+                          <button
+                            type="button"
+                            (click)="openReviewModal(booking)"
+                            class="px-2.5 py-1 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg shadow-sm transition inline-flex items-center gap-1 hover:scale-105 active:scale-95"
+                          >
+                            ⭐ Review
+                          </button>
+                        }
+                      } @else {
+                        <span class="text-[11px] text-gray-400 italic">Post-confirmation</span>
                       }
                     </td>
                     <td class="px-6 py-4 text-right">
@@ -243,18 +265,36 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
           </div>
         </div>
       }
+
+      <!-- Review Modal Dialog -->
+      <app-review-modal
+        [isOpen]="reviewModalOpen()"
+        [bookingId]="reviewBookingId()"
+        [warehouseTitle]="reviewWarehouseTitle()"
+        [warehouseId]="reviewWarehouseId()"
+        (close)="closeReviewModal()"
+        (reviewSubmitted)="onReviewSubmitted($event)"
+      />
     </div>
   `,
 })
 export class MyBookingsComponent implements OnInit {
   private http = inject(HttpClient);
+  private reviewService = inject(ReviewService);
 
   bookings = signal<Booking[]>([]);
   loading = signal<boolean>(true);
   selectedBooking = signal<Booking | null>(null);
 
+  reviewedBookingIds = signal<Set<string>>(new Set());
+  reviewModalOpen = signal<boolean>(false);
+  reviewBookingId = signal<string>('');
+  reviewWarehouseTitle = signal<string>('');
+  reviewWarehouseId = signal<string>('');
+
   ngOnInit() {
     this.fetchBookings();
+    this.fetchMyReviews();
   }
 
   fetchBookings() {
@@ -268,6 +308,53 @@ export class MyBookingsComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  fetchMyReviews() {
+    this.reviewService.getMyReviews().subscribe({
+      next: (res) => {
+        if (res.data) {
+          const ids = new Set<string>();
+          for (const rev of res.data) {
+            const bId = typeof rev.bookingId === 'object' && rev.bookingId ? (rev.bookingId as any)._id : rev.bookingId;
+            if (bId) ids.add(bId.toString());
+          }
+          this.reviewedBookingIds.set(ids);
+        }
+      },
+      error: (err) => {
+        console.error('Failed to load user reviews', err);
+      },
+    });
+  }
+
+  isReviewable(booking: Booking): boolean {
+    return ['CONFIRMED', 'ACTIVE', 'COMPLETED'].includes(booking.status);
+  }
+
+  hasReviewed(bookingId: string): boolean {
+    return this.reviewedBookingIds().has(bookingId);
+  }
+
+  openReviewModal(booking: Booking) {
+    const whId = typeof booking.warehouseId === 'object' && booking.warehouseId ? (booking.warehouseId as any)._id : booking.warehouseId;
+    this.reviewBookingId.set(booking._id);
+    this.reviewWarehouseId.set(whId || '');
+    this.reviewWarehouseTitle.set(this.getWarehouseTitle(booking.warehouseId));
+    this.reviewModalOpen.set(true);
+  }
+
+  closeReviewModal() {
+    this.reviewModalOpen.set(false);
+  }
+
+  onReviewSubmitted(review: any) {
+    const updated = new Set(this.reviewedBookingIds());
+    if (this.reviewBookingId()) {
+      updated.add(this.reviewBookingId());
+      this.reviewedBookingIds.set(updated);
+    }
+    this.closeReviewModal();
   }
 
   getWarehouseTitle(warehouse: any): string {

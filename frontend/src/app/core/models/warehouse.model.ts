@@ -33,6 +33,8 @@ export interface Warehouse {
   rejectionReason?: string;
   isActive: boolean;
   distanceKm?: number;
+  averageRating?: number;
+  reviewCount?: number;
   createdAt?: string;
 }
 
