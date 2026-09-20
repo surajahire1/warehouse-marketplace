@@ -20,8 +20,8 @@ export interface InquiryWarehouseSummary {
   _id: string;
   title: string;
   address?: {
-    city: string;
-    state: string;
+    city?: string;
+    state?: string;
     street?: string;
   };
   images?: string[];
@@ -32,9 +32,9 @@ export interface InquiryWarehouseSummary {
 
 export interface Inquiry {
   _id: string;
-  warehouseId: InquiryWarehouseSummary;
-  customerId: InquiryParticipant;
-  managerId: InquiryParticipant;
+  warehouseId?: InquiryWarehouseSummary | any;
+  customerId?: InquiryParticipant | any;
+  managerId?: InquiryParticipant | any;
   messages: InquiryMessage[];
   lastMessage: string;
   lastMessageAt: string;
@@ -44,3 +44,4 @@ export interface Inquiry {
   createdAt: string;
   updatedAt: string;
 }
+

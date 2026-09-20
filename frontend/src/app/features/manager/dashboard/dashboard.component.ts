@@ -228,13 +228,13 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                 <!-- Customer info & last message -->
                 <div class="flex items-start gap-4 flex-1">
                   <div class="w-11 h-11 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-xs flex-shrink-0">
-                    {{ inq.customerId.name ? inq.customerId.name.substring(0, 2).toUpperCase() : 'CU' }}
+                    {{ getCustomerInitials(inq.customerId) }}
                   </div>
 
                   <div class="space-y-1">
                     <div class="flex flex-wrap items-center gap-2">
-                      <span class="font-bold text-sm text-gray-900">{{ inq.customerId.name || 'Customer' }}</span>
-                      <span class="text-xs text-gray-400">({{ inq.customerId.email || 'N/A' }} • {{ inq.customerId.phone || 'No phone' }})</span>
+                      <span class="font-bold text-sm text-gray-900">{{ getCustomerName(inq.customerId) }}</span>
+                      <span class="text-xs text-gray-400">({{ getCustomerEmail(inq.customerId) }} • {{ getCustomerPhone(inq.customerId) }})</span>
                       @if (inq.unreadManagerCount > 0) {
                         <span class="px-2 py-0.5 bg-amber-100 text-amber-800 font-bold text-[10px] rounded-full border border-amber-200">
                           {{ inq.unreadManagerCount }} New Message{{ inq.unreadManagerCount > 1 ? 's' : '' }}
@@ -244,9 +244,9 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
 
                     <div class="flex items-center gap-1.5 text-xs text-indigo-700 font-medium">
                       <span>🏢</span>
-                      <span>{{ inq.warehouseId.title || 'Warehouse Facility' }}</span>
-                      @if (inq.warehouseId.address && inq.warehouseId.address.city) {
-                        <span class="text-gray-400 font-normal">({{ inq.warehouseId.address.city }})</span>
+                      <span>{{ getWarehouseTitle(inq.warehouseId) }}</span>
+                      @if (getWarehouseCity(inq.warehouseId)) {
+                        <span class="text-gray-400 font-normal">({{ getWarehouseCity(inq.warehouseId) }})</span>
                       }
                     </div>
 
@@ -362,11 +362,11 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             <div class="px-5 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
               <div>
                 <div class="flex items-center gap-2">
-                  <h3 class="font-bold text-sm text-gray-900">Chat with {{ getCustomerName(activeInquiry()!.customerId) }}</h3>
+                  <h3 class="font-bold text-sm text-gray-900">Chat with {{ getCustomerName(activeInquiry()?.customerId) }}</h3>
                   <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 font-bold text-[10px] rounded-full border border-indigo-100">Customer</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                  🏢 {{ getWarehouseTitle(activeInquiry()!.warehouseId) }}
+                  🏢 {{ getWarehouseTitle(activeInquiry()?.warehouseId) }}
                 </p>
               </div>
               <button 
@@ -380,25 +380,31 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
 
             <!-- Messages Stream -->
             <div #inquiryChatScroll class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50 min-h-[300px] max-h-[420px]">
-              @for (msg of activeInquiry()!.messages; track msg._id || msg.createdAt) {
-                <div 
-                  class="flex flex-col"
-                  [ngClass]="msg.senderRole === 'MANAGER' ? 'items-end' : 'items-start'"
-                >
-                  <div class="flex items-center gap-1 text-[10px] text-gray-400 mb-0.5 px-1">
-                    <span class="font-bold text-gray-600">{{ msg.senderRole === 'MANAGER' ? 'You (Host)' : msg.senderName }}</span>
-                    <span>•</span>
-                    <span>{{ msg.createdAt | date:'shortTime' }}</span>
-                  </div>
-                  <div 
-                    class="max-w-[85%] rounded-2xl px-3.5 py-2.5 leading-relaxed shadow-xs text-xs"
-                    [ngClass]="msg.senderRole === 'MANAGER' 
-                      ? 'bg-indigo-600 text-white rounded-tr-xs' 
-                      : 'bg-white border border-gray-200 text-gray-800 rounded-tl-xs'"
-                  >
-                    <p class="whitespace-pre-line">{{ msg.text }}</p>
-                  </div>
+              @if (!activeInquiry()?.messages || activeInquiry()!.messages.length === 0) {
+                <div class="py-16 text-center text-xs text-gray-400">
+                  No messages yet in this discussion. Send an operational response below.
                 </div>
+              } @else {
+                @for (msg of activeInquiry()!.messages; track msg._id || msg.createdAt) {
+                  <div 
+                    class="flex flex-col"
+                    [ngClass]="msg.senderRole === 'MANAGER' ? 'items-end' : 'items-start'"
+                  >
+                    <div class="flex items-center gap-1 text-[10px] text-gray-400 mb-0.5 px-1">
+                      <span class="font-bold text-gray-600">{{ msg.senderRole === 'MANAGER' ? 'You (Host)' : (msg.senderName || 'Customer') }}</span>
+                      <span>•</span>
+                      <span>{{ msg.createdAt | date:'shortTime' }}</span>
+                    </div>
+                    <div 
+                      class="max-w-[85%] rounded-2xl px-3.5 py-2.5 leading-relaxed shadow-xs text-xs"
+                      [ngClass]="msg.senderRole === 'MANAGER' 
+                        ? 'bg-indigo-600 text-white rounded-tr-xs' 
+                        : 'bg-white border border-gray-200 text-gray-800 rounded-tl-xs'"
+                    >
+                      <p class="whitespace-pre-line">{{ msg.text }}</p>
+                    </div>
+                  </div>
+                }
               }
             </div>
 
@@ -416,20 +422,21 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                 <button 
                   type="submit" 
                   [disabled]="!replyText.trim() || sendingReply()"
-                  class="shrink-0 whitespace-nowrap min-w-[110px] h-[46px] px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                  style="min-width: 125px !important; height: 46px !important; background-color: #4f46e5 !important; color: #ffffff !important; display: inline-flex !important; align-items: center !important; justify-content: center !important;"
+                  class="shrink-0 whitespace-nowrap px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   @if (sendingReply()) {
-                    <span class="animate-spin text-sm">⏳</span>
-                    <span>Sending...</span>
+                    <span class="animate-spin text-sm" style="color: #ffffff !important;">⏳</span>
+                    <span style="color: #ffffff !important; font-weight: 700;">Sending...</span>
                   } @else {
-                    <span>Send Reply</span>
-                    <span class="text-sm">➔</span>
+                    <span style="color: #ffffff !important; font-weight: 700;">Send Reply</span>
+                    <span class="text-sm" style="color: #ffffff !important;">➔</span>
                   }
                 </button>
               </form>
               <div class="flex justify-between items-center text-[10px] text-gray-400 mt-2 px-1">
                 <span>Press <strong>Enter</strong> to send • <strong>Shift+Enter</strong> for newline</span>
-                <span>Contact: {{ getCustomerContact(activeInquiry()!.customerId) }}</span>
+                <span>Contact: {{ getCustomerContact(activeInquiry()?.customerId) }}</span>
               </div>
             </div>
           </div>
@@ -639,21 +646,38 @@ export class ManagerDashboardComponent implements OnInit {
     return b.warehouseId?.title || 'Warehouse Facility';
   }
 
+  getWarehouseCity(b: any): string {
+    if (!b) return '';
+    if (typeof b === 'object' && b.address?.city) return b.address.city;
+    return b.warehouseId?.address?.city || '';
+  }
+
   getCustomerName(b: any): string {
     if (!b) return 'Customer';
     if (typeof b === 'object' && b.name) return b.name;
     return b.customerId?.name || 'Customer';
   }
 
+  getCustomerInitials(customer: any): string {
+    const name = this.getCustomerName(customer);
+    return name && name !== 'Customer' ? name.substring(0, 2).toUpperCase() : 'CU';
+  }
+
   getCustomerEmail(b: any): string {
+    if (!b) return 'N/A';
+    if (typeof b === 'object' && b.email) return b.email;
     return b.customerId?.email || 'N/A';
   }
 
   getCustomerPhone(b: any): string {
+    if (!b) return 'No phone';
+    if (typeof b === 'object' && b.phone) return b.phone;
     return b.customerId?.phone || 'No phone';
   }
 
   getCapacityUnit(b: any): string {
+    if (!b) return 'SQFT';
+    if (typeof b === 'object' && b.capacityUnit) return b.capacityUnit;
     return b.warehouseId?.capacityUnit || 'SQFT';
   }
 }

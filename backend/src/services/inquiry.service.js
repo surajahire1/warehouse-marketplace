@@ -119,20 +119,24 @@ export const sendMessage = async (inquiryId, senderUser, text) => {
  * Retrieves all inquiries initiated by a customer.
  */
 export const getCustomerInquiries = async (customerId) => {
-  return Inquiry.find({ customerId })
+  const inqs = await Inquiry.find({ customerId })
     .populate('managerId', 'name email phone avatar')
     .populate('warehouseId', 'title address images capacityUnit pricePerUnitPerDay minBookingDays')
     .sort({ lastMessageAt: -1 });
+
+  return inqs.filter((i) => i.warehouseId && i.managerId);
 };
 
 /**
  * Retrieves all inquiries received by a warehouse manager across their facilities.
  */
 export const getManagerInquiries = async (managerId) => {
-  return Inquiry.find({ managerId })
+  const inqs = await Inquiry.find({ managerId })
     .populate('customerId', 'name email phone avatar')
     .populate('warehouseId', 'title address images capacityUnit pricePerUnitPerDay minBookingDays')
     .sort({ lastMessageAt: -1 });
+
+  return inqs.filter((i) => i.warehouseId && i.customerId);
 };
 
 /**
