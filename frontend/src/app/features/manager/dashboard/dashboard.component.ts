@@ -1,4 +1,4 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
+import { Component, OnInit, inject, signal, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -362,11 +362,11 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             <div class="px-5 py-4 bg-gray-50 border-b border-gray-200 flex items-center justify-between">
               <div>
                 <div class="flex items-center gap-2">
-                  <h3 class="font-bold text-sm text-gray-900">Chat with {{ activeInquiry()!.customerId.name || 'Customer' }}</h3>
+                  <h3 class="font-bold text-sm text-gray-900">Chat with {{ getCustomerName(activeInquiry()!.customerId) }}</h3>
                   <span class="px-2 py-0.5 bg-indigo-50 text-indigo-700 font-bold text-[10px] rounded-full border border-indigo-100">Customer</span>
                 </div>
                 <p class="text-xs text-gray-500 mt-0.5 line-clamp-1">
-                  🏢 {{ activeInquiry()!.warehouseId.title }}
+                  🏢 {{ getWarehouseTitle(activeInquiry()!.warehouseId) }}
                 </p>
               </div>
               <button 
@@ -379,7 +379,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             </div>
 
             <!-- Messages Stream -->
-            <div class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50 min-h-[300px] max-h-[420px]">
+            <div #inquiryChatScroll class="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50/50 min-h-[300px] max-h-[420px]">
               @for (msg of activeInquiry()!.messages; track msg._id || msg.createdAt) {
                 <div 
                   class="flex flex-col"
@@ -403,32 +403,33 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             </div>
 
             <!-- Reply Input Box -->
-            <div class="p-3 bg-white border-t border-gray-200 space-y-2">
-              <div class="flex items-end gap-2">
+            <div class="p-4 bg-white border-t border-gray-200">
+              <form (ngSubmit)="sendInquiryReply()" class="flex items-end gap-3">
                 <textarea 
                   [(ngModel)]="replyText" 
+                  name="managerReplyText"
                   (keydown.enter)="onReplyKeyDown($event)"
                   rows="2"
                   placeholder="Type your operational response (e.g. 'Yes, our 40-ft bays are accessible 24/7')..."
-                  class="flex-1 px-3 py-2 border border-gray-200 rounded-xl text-xs resize-none focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                  class="flex-1 min-w-0 p-3 border border-gray-200 rounded-xl text-xs resize-none focus:ring-2 focus:ring-indigo-500 focus:outline-none bg-gray-50 focus:bg-white transition"
                 ></textarea>
                 <button 
-                  type="button" 
-                  (click)="sendInquiryReply()" 
+                  type="submit" 
                   [disabled]="!replyText.trim() || sendingReply()"
-                  class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-1"
+                  class="shrink-0 whitespace-nowrap min-w-[110px] h-[46px] px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   @if (sendingReply()) {
-                    <span>⏳</span>
+                    <span class="animate-spin text-sm">⏳</span>
+                    <span>Sending...</span>
                   } @else {
-                    <span>Reply</span>
-                    <span>➔</span>
+                    <span>Send Reply</span>
+                    <span class="text-sm">➔</span>
                   }
                 </button>
-              </div>
-              <div class="flex justify-between items-center text-[10px] text-gray-400 px-1">
-                <span>Press Enter to send reply</span>
-                <span>Contact: {{ activeInquiry()!.customerId.phone || activeInquiry()!.customerId.email }}</span>
+              </form>
+              <div class="flex justify-between items-center text-[10px] text-gray-400 mt-2 px-1">
+                <span>Press <strong>Enter</strong> to send • <strong>Shift+Enter</strong> for newline</span>
+                <span>Contact: {{ getCustomerContact(activeInquiry()!.customerId) }}</span>
               </div>
             </div>
           </div>
@@ -438,6 +439,8 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
   `,
 })
 export class ManagerDashboardComponent implements OnInit {
+  @ViewChild('inquiryChatScroll') private inquiryChatScroll!: ElementRef<HTMLDivElement>;
+
   private http = inject(HttpClient);
   authService = inject(AuthService);
   inquiryService = inject(InquiryService);
@@ -482,6 +485,7 @@ export class ManagerDashboardComponent implements OnInit {
   openInquiryChat(inquiry: Inquiry) {
     this.activeInquiry.set(inquiry);
     this.replyText = '';
+    this.sendingReply.set(false);
     if (inquiry.unreadManagerCount > 0) {
       this.inquiryService.markAsRead(inquiry._id).subscribe({
         next: () => {
@@ -489,11 +493,13 @@ export class ManagerDashboardComponent implements OnInit {
         },
       });
     }
+    setTimeout(() => this.scrollInquiryChatToBottom(), 100);
   }
 
   closeInquiryChat() {
     this.activeInquiry.set(null);
     this.replyText = '';
+    this.sendingReply.set(false);
     this.fetchInquiries();
   }
 
@@ -515,12 +521,28 @@ export class ManagerDashboardComponent implements OnInit {
         this.replyText = '';
         this.sendingReply.set(false);
         this.fetchInquiries();
+        setTimeout(() => this.scrollInquiryChatToBottom(), 100);
       },
       error: (err) => {
         this.sendingReply.set(false);
         alert(err.error?.message || 'Could not send reply.');
       },
     });
+  }
+
+  private scrollInquiryChatToBottom() {
+    if (this.inquiryChatScroll?.nativeElement) {
+      this.inquiryChatScroll.nativeElement.scrollTop =
+        this.inquiryChatScroll.nativeElement.scrollHeight;
+    }
+  }
+
+  getCustomerContact(customer: any): string {
+    if (!customer) return '';
+    if (typeof customer === 'object') {
+      return customer.phone || customer.email || customer.name || '';
+    }
+    return '';
   }
 
   get approvedCount(): number {
@@ -612,10 +634,14 @@ export class ManagerDashboardComponent implements OnInit {
   }
 
   getWarehouseTitle(b: any): string {
+    if (!b) return 'Warehouse Facility';
+    if (typeof b === 'object' && b.title) return b.title;
     return b.warehouseId?.title || 'Warehouse Facility';
   }
 
   getCustomerName(b: any): string {
+    if (!b) return 'Customer';
+    if (typeof b === 'object' && b.name) return b.name;
     return b.customerId?.name || 'Customer';
   }
 
