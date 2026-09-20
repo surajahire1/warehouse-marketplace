@@ -7,6 +7,7 @@ import { environment } from '../../../../environments/environment';
 import { Warehouse, AvailabilityResult } from '../../../core/models/warehouse.model';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { CapacityGaugeComponent } from '../../../shared/components/capacity-gauge/capacity-gauge.component';
+import { InquiryDrawerComponent } from '../../../shared/components/inquiry-drawer/inquiry-drawer.component';
 import { AuthService } from '../../../core/services/auth.service';
 
 declare var window: any;
@@ -14,7 +15,7 @@ declare var window: any;
 @Component({
   selector: 'app-warehouse-detail',
   standalone: true,
-  imports: [CommonModule, FormsModule, RouterLink, CapacityGaugeComponent],
+  imports: [CommonModule, FormsModule, RouterLink, CapacityGaugeComponent, InquiryDrawerComponent],
   template: `
     @if (loading()) {
       <div class="py-20 text-center text-gray-500">Loading facility details...</div>
@@ -75,6 +76,37 @@ declare var window: any;
                   </span>
                 }
               </div>
+            </div>
+
+            <!-- Host Information & Direct Chat Card -->
+            <div class="p-5 bg-gradient-to-r from-indigo-50/70 to-blue-50/50 rounded-2xl border border-indigo-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
+              <div class="flex items-center gap-3.5">
+                <div class="w-12 h-12 rounded-full bg-indigo-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
+                  {{ managerInitials }}
+                </div>
+                <div>
+                  <div class="flex items-center gap-2">
+                    <h3 class="text-sm font-bold text-gray-900">
+                      Hosted by {{ managerDisplayName }}
+                    </h3>
+                    <span class="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-bold rounded-full border border-emerald-200">
+                      ✓ Verified Host
+                    </span>
+                  </div>
+                  <p class="text-xs text-gray-500 mt-0.5">
+                    Commercial facility operator • Fast operational response
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                (click)="isInquiryDrawerOpen.set(true)"
+                class="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs rounded-xl transition shadow-sm flex items-center gap-1.5"
+              >
+                <span>💬</span>
+                <span>Ask Host a Question</span>
+              </button>
             </div>
           </div>
 
@@ -243,9 +275,35 @@ declare var window: any;
                   Sign in to Pay & Reserve Space
                 </a>
               }
+
+              <!-- Host Direct Inquiry Button in Sidebar -->
+              <div class="pt-2 border-t border-gray-100">
+                <button
+                  type="button"
+                  (click)="isInquiryDrawerOpen.set(true)"
+                  class="w-full py-2.5 px-4 bg-white hover:bg-indigo-50/50 text-indigo-700 hover:text-indigo-800 border border-indigo-200 font-bold text-xs rounded-xl transition shadow-xs flex items-center justify-center gap-2"
+                >
+                  <span class="text-base">💬</span>
+                  <span>Inquire with Host (Direct Chat)</span>
+                </button>
+                <p class="text-[10px] text-gray-400 text-center mt-1.5">
+                  Ask about trailer access, night gates, or forklift operators
+                </p>
+              </div>
+
             </div>
           </div>
         </div>
+
+        <!-- Slide-over Customer ↔ Host Chat Drawer -->
+        <app-inquiry-drawer
+          [isOpen]="isInquiryDrawerOpen()"
+          [warehouseId]="warehouse()!._id"
+          [warehouseTitle]="warehouse()!.title"
+          [managerName]="managerDisplayName"
+          [managerPhone]="managerPhone"
+          (close)="isInquiryDrawerOpen.set(false)"
+        />
       </div>
     }
   `,
@@ -259,6 +317,7 @@ export class WarehouseDetailComponent implements OnInit {
   warehouse = signal<Warehouse | null>(null);
   availabilityResult = signal<AvailabilityResult | null>(null);
   availabilityError = signal<string | null>(null);
+  isInquiryDrawerOpen = signal<boolean>(false);
   loading = signal<boolean>(true);
   checking = signal<boolean>(false);
   processingPayment = signal<boolean>(false);
@@ -268,6 +327,27 @@ export class WarehouseDetailComponent implements OnInit {
   todayDate: string = '';
   minEndDate: string = '';
   quantity: number = 5000;
+
+  get managerDisplayName(): string {
+    const mgr = this.warehouse()?.managerId;
+    if (mgr && typeof mgr === 'object' && 'name' in mgr) {
+      return (mgr as any).name || 'Facility Host';
+    }
+    return 'Facility Host';
+  }
+
+  get managerInitials(): string {
+    const name = this.managerDisplayName;
+    return name ? name.substring(0, 2).toUpperCase() : 'WH';
+  }
+
+  get managerPhone(): string {
+    const mgr = this.warehouse()?.managerId;
+    if (mgr && typeof mgr === 'object' && 'phone' in mgr) {
+      return (mgr as any).phone || '';
+    }
+    return '';
+  }
 
   get selectedDurationDays(): number {
     if (!this.startDate || !this.endDate) return 0;
