@@ -15,9 +15,30 @@ export const createApp = () => {
   app.use(helmet());
 
   // Cross-Origin Resource Sharing
+  const allowedOrigins = config.clientUrl
+    ? config.clientUrl.split(',').map((url) => url.trim().replace(/\/$/, ''))
+    : ['http://localhost:4200'];
+
   app.use(
     cors({
-      origin: config.clientUrl,
+      origin: (origin, callback) => {
+        // Allow requests with no origin (like mobile apps, curl, or Postman)
+        if (!origin) return callback(null, true);
+
+        const cleanOrigin = origin.replace(/\/$/, '');
+        const isAllowed =
+          allowedOrigins.includes(cleanOrigin) ||
+          allowedOrigins.includes('*') ||
+          cleanOrigin.endsWith('.onrender.com') ||
+          cleanOrigin.startsWith('http://localhost') ||
+          cleanOrigin.startsWith('http://127.0.0.1');
+
+        if (isAllowed) {
+          callback(null, true);
+        } else {
+          callback(new Error(`Origin ${origin} not allowed by CORS policy`));
+        }
+      },
       credentials: true,
     })
   );
@@ -43,6 +64,26 @@ export const createApp = () => {
 
   // API v1 Routes
   app.use('/api/v1', v1Routes);
+
+  // Root Service Status Endpoint
+  app.get('/', (req, res) => {
+    res.status(200).json({
+      success: true,
+      service: 'Warehouse Marketplace API',
+      status: 'operational',
+      environment: config.nodeEnv,
+      version: '1.0.0',
+      endpoints: {
+        health: '/api/v1/health',
+        apiRoot: '/api/v1',
+      },
+    });
+  });
+
+  // Top-level Health Check (Common on Render & container monitors)
+  app.get('/health', (req, res) => {
+    res.status(200).json({ status: 'ok', uptime: process.uptime(), timestamp: new Date().toISOString() });
+  });
 
   // 404 Handler
   app.use((req, res, next) => {
