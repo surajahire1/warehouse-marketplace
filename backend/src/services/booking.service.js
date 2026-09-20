@@ -102,6 +102,7 @@ export const checkWarehouseAvailability = async (warehouseId, startDateStr, endD
     requestedQuantity,
     isAvailable,
     durationDays,
+    minBookingDays: warehouse.minBookingDays || 1,
     pricePerUnitPerDay: warehouse.pricePerUnitPerDay,
     estimatedTotal: Math.round(estimatedTotal * 100) / 100,
   };

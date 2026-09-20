@@ -274,6 +274,11 @@ export class WarehouseMapComponent implements AfterViewInit, OnChanges, OnDestro
               ${distanceBadge}
             </div>
 
+            <div class="flex items-center justify-between text-xs mb-2 bg-amber-50/90 px-2.5 py-1 rounded-lg border border-amber-200">
+              <span class="text-amber-800 font-medium">Min. Duration:</span>
+              <span class="text-amber-950 font-bold">⏱️ ${wh.minBookingDays || 1} Day${(wh.minBookingDays || 1) > 1 ? 's' : ''}</span>
+            </div>
+
             <div class="text-xs text-gray-600 mb-3 bg-gray-50 p-2 rounded-lg border border-gray-100 flex items-center justify-between">
               <span class="text-gray-500">Available Space:</span>
               <strong class="text-gray-900 font-bold">${wh.totalCapacity.toLocaleString()} ${wh.capacityUnit}</strong>

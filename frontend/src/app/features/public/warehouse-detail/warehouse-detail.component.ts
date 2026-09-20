@@ -47,6 +47,25 @@ declare var window: any;
               <p class="text-sm text-gray-700 leading-relaxed whitespace-pre-line">{{ warehouse()!.description }}</p>
             </div>
 
+            <!-- Facility Specifications Overview -->
+            <div>
+              <h2 class="text-lg font-bold text-gray-900 mb-3">Facility Specifications</h2>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+                <div class="p-3 bg-amber-50/80 rounded-xl border border-amber-200">
+                  <span class="text-[11px] text-amber-800 font-semibold block uppercase tracking-wider">Min. Reservation</span>
+                  <span class="text-base font-extrabold text-amber-950">⏱️ {{ warehouse()!.minBookingDays }} Day{{ warehouse()!.minBookingDays > 1 ? 's' : '' }}</span>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <span class="text-[11px] text-gray-500 font-semibold block uppercase tracking-wider">Total Capacity</span>
+                  <span class="text-base font-extrabold text-gray-900">{{ warehouse()!.totalCapacity.toLocaleString() }} {{ warehouse()!.capacityUnit }}</span>
+                </div>
+                <div class="p-3 bg-gray-50 rounded-xl border border-gray-200">
+                  <span class="text-[11px] text-gray-500 font-semibold block uppercase tracking-wider">Daily Rate</span>
+                  <span class="text-base font-extrabold text-gray-900">{{ warehouse()!.currency === 'USD' ? '$' : '₹' }}{{ warehouse()!.pricePerUnitPerDay }}/day</span>
+                </div>
+              </div>
+            </div>
+
             <div>
               <h2 class="text-lg font-bold text-gray-900 mb-3">Facility Amenities</h2>
               <div class="flex flex-wrap gap-2">
@@ -69,6 +88,20 @@ declare var window: any;
                 <span class="text-xs text-gray-500">per {{ warehouse()!.capacityUnit }} / day</span>
               </div>
 
+              <!-- Prominent Minimum Stay Policy Pill -->
+              <div class="p-3.5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-xl text-xs text-amber-950 flex items-center justify-between shadow-xs">
+                <div class="flex items-center gap-2.5">
+                  <span class="text-xl">⏱️</span>
+                  <div>
+                    <span class="font-bold block text-gray-900">Minimum Stay Policy</span>
+                    <span class="text-[11px] text-amber-800">Requires at least {{ warehouse()!.minBookingDays }} consecutive days</span>
+                  </div>
+                </div>
+                <span class="text-xs font-black px-2.5 py-1 bg-amber-200/90 text-amber-950 rounded-lg border border-amber-300 whitespace-nowrap">
+                  {{ warehouse()!.minBookingDays }} Days
+                </span>
+              </div>
+
               <!-- Capacity Overview -->
               <app-capacity-gauge 
                 [total]="warehouse()!.totalCapacity" 
@@ -79,21 +112,31 @@ declare var window: any;
               <!-- Availability Check Form -->
               <div class="space-y-3 pt-2">
                 <div>
-                  <label class="block text-xs font-semibold text-gray-700">Start Date</label>
+                  <div class="flex justify-between items-center">
+                    <label class="block text-xs font-semibold text-gray-700">Start Date (Check-in)</label>
+                    <span class="text-[10px] text-gray-400">Earliest: Today</span>
+                  </div>
                   <input 
                     type="date" 
                     [(ngModel)]="startDate" 
-                    (change)="onCheckAvailability()"
-                    class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" 
+                    [min]="todayDate"
+                    (change)="onStartDateChange()"
+                    class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                   />
                 </div>
                 <div>
-                  <label class="block text-xs font-semibold text-gray-700">End Date</label>
+                  <div class="flex justify-between items-center">
+                    <label class="block text-xs font-semibold text-gray-700">End Date (Check-out)</label>
+                    @if (minEndDate) {
+                      <span class="text-[10px] text-amber-700 font-medium">Min end: {{ minEndDate }}</span>
+                    }
+                  </div>
                   <input 
                     type="date" 
                     [(ngModel)]="endDate" 
-                    (change)="onCheckAvailability()"
-                    class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" 
+                    [min]="minEndDate || todayDate"
+                    (change)="onEndDateChange()"
+                    class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                   />
                 </div>
                 <div>
@@ -102,10 +145,49 @@ declare var window: any;
                     type="number" 
                     [(ngModel)]="quantity" 
                     (input)="onCheckAvailability()"
-                    class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm" 
+                    class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
                   />
                 </div>
               </div>
+
+              <!-- Real-time Duration Validation Indicator -->
+              @if (startDate && endDate) {
+                @if (selectedDurationDays < warehouse()!.minBookingDays) {
+                  <div class="p-3 bg-amber-50 border border-amber-300 rounded-xl text-xs text-amber-900 space-y-2">
+                    <div class="flex items-center gap-1.5 font-bold text-amber-950">
+                      <span>⚠️</span>
+                      <span>Below Minimum Booking Duration</span>
+                    </div>
+                    <p class="text-[11px] text-amber-800 leading-relaxed">
+                      This warehouse requires a minimum stay of <strong>{{ warehouse()!.minBookingDays }} days</strong>. Your current selection is <strong>{{ selectedDurationDays }} day{{ selectedDurationDays === 1 ? '' : 's' }}</strong>.
+                    </p>
+                    <button 
+                      type="button"
+                      (click)="applyMinDaysDuration()"
+                      class="w-full py-1.5 px-3 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-lg transition shadow-xs flex items-center justify-center gap-1.5"
+                    >
+                      <span>⚡</span>
+                      <span>Auto-extend to {{ warehouse()!.minBookingDays }} days (until {{ suggestedEndDateStr }})</span>
+                    </button>
+                  </div>
+                } @else {
+                  <div class="text-[11px] bg-emerald-50 border border-emerald-200 rounded-lg p-2 text-emerald-900 flex items-center justify-between">
+                    <span class="flex items-center gap-1">
+                      <span>✓</span>
+                      <span>Selected Duration: <strong>{{ selectedDurationDays }} days</strong></span>
+                    </span>
+                    <span class="text-[10px] text-emerald-700 font-semibold">(Meets {{ warehouse()!.minBookingDays }}d min)</span>
+                  </div>
+                }
+              }
+
+              <!-- Backend Availability Error Banner if any -->
+              @if (availabilityError() && (!startDate || !endDate || selectedDurationDays >= warehouse()!.minBookingDays)) {
+                <div class="p-3 bg-rose-50 border border-rose-200 rounded-xl text-xs text-rose-800 flex items-center gap-2">
+                  <span>⚠️</span>
+                  <span>{{ availabilityError() }}</span>
+                </div>
+              }
 
               <!-- Real-time Availability Calculation Result -->
               @if (checking()) {
@@ -142,12 +224,16 @@ declare var window: any;
               <!-- Payment & Action Button -->
               @if (authService.isAuthenticated()) {
                 <button 
-                  [disabled]="!availabilityResult()?.isAvailable || processingPayment()"
+                  [disabled]="!availabilityResult()?.isAvailable || processingPayment() || (selectedDurationDays < warehouse()!.minBookingDays)"
                   (click)="onPayAndBook()"
                   class="w-full py-3.5 bg-indigo-600 text-white font-bold text-sm rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition shadow-md flex items-center justify-center gap-2"
                 >
                   <span>💳</span>
-                  <span>{{ processingPayment() ? 'Processing Payment...' : 'Pay & Reserve Space (' + (warehouse()!.currency === 'USD' ? '$' : '₹') + (availabilityResult() ? availabilityResult()!.estimatedTotal : 0) + ')' }}</span>
+                  <span>
+                    {{ processingPayment() ? 'Processing Payment...' : 
+                       (selectedDurationDays < warehouse()!.minBookingDays) ? 'Min. ' + warehouse()!.minBookingDays + ' Days Required' :
+                       'Pay & Reserve Space (' + (warehouse()!.currency === 'USD' ? '$' : '₹') + (availabilityResult() ? availabilityResult()!.estimatedTotal : 0) + ')' }}
+                  </span>
                 </button>
               } @else {
                 <a 
@@ -172,16 +258,39 @@ export class WarehouseDetailComponent implements OnInit {
 
   warehouse = signal<Warehouse | null>(null);
   availabilityResult = signal<AvailabilityResult | null>(null);
+  availabilityError = signal<string | null>(null);
   loading = signal<boolean>(true);
   checking = signal<boolean>(false);
   processingPayment = signal<boolean>(false);
 
   startDate: string = '';
   endDate: string = '';
+  todayDate: string = '';
+  minEndDate: string = '';
   quantity: number = 5000;
+
+  get selectedDurationDays(): number {
+    if (!this.startDate || !this.endDate) return 0;
+    const start = new Date(this.startDate);
+    const end = new Date(this.endDate);
+    if (isNaN(start.getTime()) || isNaN(end.getTime()) || end <= start) return 0;
+    return Math.max(1, Math.ceil((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)));
+  }
+
+  get suggestedEndDateStr(): string {
+    if (!this.startDate || !this.warehouse()) return '';
+    const start = new Date(this.startDate);
+    const minDays = this.warehouse()!.minBookingDays || 1;
+    const end = new Date(start);
+    end.setDate(end.getDate() + minDays);
+    return end.toISOString().split('T')[0];
+  }
 
   ngOnInit() {
     this.loadRazorpayScript();
+    const now = new Date();
+    this.todayDate = now.toISOString().split('T')[0];
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.fetchWarehouse(id);
@@ -203,6 +312,21 @@ export class WarehouseDetailComponent implements OnInit {
       next: (res) => {
         this.warehouse.set(res.data);
         this.loading.set(false);
+
+        // Pre-fill sensible default dates: start tomorrow, end tomorrow + minBookingDays
+        if (!this.startDate) {
+          const tomorrow = new Date();
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          this.startDate = tomorrow.toISOString().split('T')[0];
+
+          const minDays = res.data.minBookingDays || 1;
+          const defaultEnd = new Date(tomorrow);
+          defaultEnd.setDate(defaultEnd.getDate() + minDays);
+          this.endDate = defaultEnd.toISOString().split('T')[0];
+          this.minEndDate = this.endDate;
+
+          this.onCheckAvailability();
+        }
       },
       error: () => {
         this.loading.set(false);
@@ -210,8 +334,40 @@ export class WarehouseDetailComponent implements OnInit {
     });
   }
 
+  onStartDateChange() {
+    if (!this.startDate) return;
+    const start = new Date(this.startDate);
+    const minDays = this.warehouse()?.minBookingDays || 1;
+    const minEnd = new Date(start);
+    minEnd.setDate(minEnd.getDate() + minDays);
+    this.minEndDate = minEnd.toISOString().split('T')[0];
+
+    // If endDate is not set or less than minEndDate, automatically set it to minEndDate
+    if (!this.endDate || new Date(this.endDate) < minEnd) {
+      this.endDate = this.minEndDate;
+    }
+    this.onCheckAvailability();
+  }
+
+  onEndDateChange() {
+    this.onCheckAvailability();
+  }
+
+  applyMinDaysDuration() {
+    if (!this.startDate || !this.warehouse()) return;
+    this.endDate = this.suggestedEndDateStr;
+    this.onCheckAvailability();
+  }
+
   onCheckAvailability() {
+    this.availabilityError.set(null);
     if (!this.startDate || !this.endDate || !this.quantity || !this.warehouse()) return;
+
+    // Do not call backend if duration is strictly less than minBookingDays
+    if (this.selectedDurationDays < this.warehouse()!.minBookingDays) {
+      this.availabilityResult.set(null);
+      return;
+    }
 
     this.checking.set(true);
     const id = this.warehouse()!._id;
@@ -228,10 +384,12 @@ export class WarehouseDetailComponent implements OnInit {
         next: (res) => {
           this.availabilityResult.set(res.data);
           this.checking.set(false);
+          this.availabilityError.set(null);
         },
-        error: () => {
+        error: (err) => {
           this.availabilityResult.set(null);
           this.checking.set(false);
+          this.availabilityError.set(err.error?.message || 'Could not verify availability.');
         },
       });
   }

@@ -200,6 +200,9 @@ import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/
                     <span class="absolute top-2 right-2 bg-white/95 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-gray-900 shadow">
                       {{ warehouse.currency === 'USD' ? '$' : '₹' }}{{ warehouse.pricePerUnitPerDay }}/day
                     </span>
+                    <span class="absolute bottom-2 left-2 bg-amber-500/90 backdrop-blur text-white px-2 py-0.5 rounded text-[10px] font-bold shadow">
+                      ⏱️ Min. {{ warehouse.minBookingDays || 1 }}d
+                    </span>
                   </div>
 
                   <!-- Details -->
@@ -222,9 +225,14 @@ import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/
                     </div>
 
                     <div class="pt-3 mt-3 border-t border-gray-100 flex items-center justify-between">
-                      <span class="text-xs font-semibold text-gray-700">
-                        {{ warehouse.totalCapacity.toLocaleString() }} {{ warehouse.capacityUnit }}
-                      </span>
+                      <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-xs font-semibold text-gray-700">
+                          {{ warehouse.totalCapacity.toLocaleString() }} {{ warehouse.capacityUnit }}
+                        </span>
+                        <span class="text-[10px] font-bold text-amber-800 bg-amber-50 px-2 py-0.5 rounded-full border border-amber-200">
+                          ⏱️ {{ warehouse.minBookingDays || 1 }}d min
+                        </span>
+                      </div>
                       <a 
                         [routerLink]="['/warehouses', warehouse._id]"
                         class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-xs"
@@ -268,6 +276,12 @@ import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/
                     {{ warehouse.currency === 'USD' ? '$' : '₹' }}{{ warehouse.pricePerUnitPerDay }}/{{ warehouse.capacityUnit }}/day
                   </span>
 
+                  <!-- Minimum Booking Days Badge -->
+                  <span class="absolute top-3 left-3 bg-amber-500/95 backdrop-blur text-white px-2.5 py-1 rounded-md text-xs font-bold shadow flex items-center gap-1">
+                    <span>⏱️</span>
+                    <span>Min. {{ warehouse.minBookingDays || 1 }} Days</span>
+                  </span>
+
                   <!-- Distance Pill Badge -->
                   @if (warehouse.distanceKm !== undefined) {
                     <span class="absolute bottom-3 left-3 bg-indigo-600/90 backdrop-blur text-white px-2.5 py-1 rounded-md text-xs font-bold shadow flex items-center gap-1">
@@ -296,6 +310,12 @@ import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/
                   </div>
 
                   <div class="mt-6 pt-4 border-t border-gray-100">
+                    <div class="flex items-center justify-between text-xs mb-2.5">
+                      <span class="text-gray-500">Minimum Stay:</span>
+                      <span class="font-bold text-amber-900 bg-amber-50 px-2.5 py-0.5 rounded-md border border-amber-200 text-xs">
+                        ⏱️ {{ warehouse.minBookingDays || 1 }} Days Required
+                      </span>
+                    </div>
                     <app-capacity-gauge 
                       [total]="warehouse.totalCapacity" 
                       [available]="warehouse.totalCapacity" 

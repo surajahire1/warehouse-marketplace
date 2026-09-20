@@ -47,6 +47,7 @@ export interface AvailabilityResult {
   requestedQuantity: number;
   isAvailable: boolean;
   durationDays: number;
+  minBookingDays?: number;
   pricePerUnitPerDay: number;
   estimatedTotal: number;
 }
