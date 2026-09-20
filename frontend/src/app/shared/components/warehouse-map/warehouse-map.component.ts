@@ -9,6 +9,7 @@ import {
   SimpleChanges,
   ViewChild,
   AfterViewInit,
+  signal,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import * as L from 'leaflet';
@@ -21,6 +22,22 @@ import { Warehouse } from '../../../core/models/warehouse.model';
   template: `
     <div class="relative w-full h-full min-h-[500px] rounded-2xl overflow-hidden shadow-sm border border-gray-200">
       <div #mapContainer class="w-full h-full z-0"></div>
+
+      <!-- Gesture Overlay Prompt (shows only when scrolling without Ctrl) -->
+      @if (showCtrlPrompt()) {
+        <div class="absolute inset-0 z-[1001] bg-black/30 backdrop-blur-[2px] flex items-center justify-center pointer-events-none transition-all duration-300">
+          <div class="bg-gray-900/90 text-white px-5 py-2.5 rounded-xl text-xs font-bold shadow-2xl flex items-center gap-2 border border-white/20 animate-fade-in">
+            <span class="text-base">⌨️</span>
+            <span>Use <kbd class="px-1.5 py-0.5 bg-white/25 text-white rounded font-mono text-[11px] shadow-xs">Ctrl</kbd> + scroll to zoom map</span>
+          </div>
+        </div>
+      }
+
+      <!-- Floating Zoom Helper Pill -->
+      <div class="absolute top-3 right-3 z-[1000] bg-white/90 backdrop-blur-md px-2.5 py-1 rounded-lg shadow-sm border border-gray-200 text-[11px] text-gray-500 font-medium hidden sm:flex items-center gap-1.5 pointer-events-none">
+        <span>💡</span>
+        <span>Hold <strong class="text-gray-700">Ctrl</strong> + scroll to zoom</span>
+      </div>
 
       <!-- Floating Map Legend -->
       <div class="absolute bottom-4 left-4 z-[1000] bg-white/95 backdrop-blur-md px-3 py-2 rounded-xl shadow-md border border-gray-200 text-xs flex items-center gap-3">
@@ -58,13 +75,17 @@ export class WarehouseMapComponent implements AfterViewInit, OnChanges, OnDestro
 
   @Output() warehouseSelected = new EventEmitter<string>();
 
+  showCtrlPrompt = signal<boolean>(false);
+
   private map: L.Map | null = null;
   private markersLayer: L.FeatureGroup = new L.FeatureGroup();
   private radiusCircle: L.Circle | null = null;
   private userMarker: L.Marker | null = null;
+  private promptTimeout: any = null;
 
   ngAfterViewInit() {
     this.initMap();
+    this.setupScrollGestureControl();
   }
 
   ngOnChanges(changes: SimpleChanges) {
@@ -76,6 +97,10 @@ export class WarehouseMapComponent implements AfterViewInit, OnChanges, OnDestro
   }
 
   ngOnDestroy() {
+    if (this.promptTimeout) {
+      clearTimeout(this.promptTimeout);
+    }
+    this.removeScrollGestureControl();
     if (this.map) {
       this.map.remove();
       this.map = null;
@@ -93,7 +118,7 @@ export class WarehouseMapComponent implements AfterViewInit, OnChanges, OnDestro
     this.map = L.map(this.mapContainer.nativeElement, {
       center: [initialLat, initialLng],
       zoom: initialZoom,
-      scrollWheelZoom: true,
+      scrollWheelZoom: false, // Default to FALSE to prevent hijacking page scroll
     });
 
     // High quality OpenStreetMap tiles
@@ -105,11 +130,58 @@ export class WarehouseMapComponent implements AfterViewInit, OnChanges, OnDestro
     this.markersLayer.addTo(this.map);
     this.updateMapLayers();
 
-    // Trigger invalidateSize after a brief delay to ensure container layout is settled
+    // Trigger invalidateSize after layout settled
     setTimeout(() => {
       this.map?.invalidateSize();
     }, 200);
   }
+
+  private setupScrollGestureControl() {
+    const el = this.mapContainer?.nativeElement;
+    if (!el) return;
+
+    el.addEventListener('wheel', this.onWheelHandler, { passive: true });
+    el.addEventListener('mouseleave', this.onMouseLeaveHandler);
+  }
+
+  private removeScrollGestureControl() {
+    const el = this.mapContainer?.nativeElement;
+    if (!el) return;
+
+    el.removeEventListener('wheel', this.onWheelHandler);
+    el.removeEventListener('mouseleave', this.onMouseLeaveHandler);
+  }
+
+  private onWheelHandler = (e: WheelEvent) => {
+    if (!this.map) return;
+
+    if (e.ctrlKey || e.metaKey) {
+      // User is holding Ctrl / Cmd -> allow zooming
+      this.showCtrlPrompt.set(false);
+      if (!this.map.scrollWheelZoom.enabled()) {
+        this.map.scrollWheelZoom.enable();
+      }
+    } else {
+      // User is scrolling normally -> keep map zoom disabled so page scrolls
+      if (this.map.scrollWheelZoom.enabled()) {
+        this.map.scrollWheelZoom.disable();
+      }
+
+      // Show Google Maps style gesture overlay hint
+      this.showCtrlPrompt.set(true);
+      if (this.promptTimeout) clearTimeout(this.promptTimeout);
+      this.promptTimeout = setTimeout(() => {
+        this.showCtrlPrompt.set(false);
+      }, 1500);
+    }
+  };
+
+  private onMouseLeaveHandler = () => {
+    this.showCtrlPrompt.set(false);
+    if (this.map?.scrollWheelZoom.enabled()) {
+      this.map.scrollWheelZoom.disable();
+    }
+  };
 
   private updateMapLayers() {
     if (!this.map) return;
