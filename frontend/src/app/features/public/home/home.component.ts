@@ -70,6 +70,13 @@ import { FormsModule } from '@angular/forms';
           <span class="text-gray-400 font-medium">Popular Hubs:</span>
           <button 
             type="button"
+            (click)="selectHub('Navsari')"
+            class="px-3 py-1 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 rounded-full text-gray-700 font-medium transition shadow-xs"
+          >
+            📍 Surat / Navsari
+          </button>
+          <button 
+            type="button"
             (click)="selectHub('Bhiwandi')"
             class="px-3 py-1 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 rounded-full text-gray-700 font-medium transition shadow-xs"
           >
@@ -143,6 +150,7 @@ export class HomeComponent {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         this.locating = false;
+        this.searchCity = ''; // Clear city filter so radius search finds all warehouses within radius
         const lat = pos.coords.latitude;
         const lng = pos.coords.longitude;
         this.router.navigate(['/warehouses'], {

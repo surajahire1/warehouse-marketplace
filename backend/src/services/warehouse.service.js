@@ -107,15 +107,25 @@ export const searchWarehouses = async (queryFilters) => {
     filter.pricePerUnitPerDay = { $lte: parseFloat(maxPrice) };
   }
 
-  if (capacityUnit) {
-    filter.capacityUnit = capacityUnit;
+  // Prepare count filter (countDocuments requires $geoWithin instead of $nearSphere)
+  const countFilter = { ...filter };
+  if (hasCoordinates) {
+    const radiusInRadians = (radiusKm ? parseFloat(radiusKm) : 500) / 6371; // Earth radius in km
+    countFilter.location = {
+      $geoWithin: {
+        $centerSphere: [
+          [parseFloat(longitude), parseFloat(latitude)],
+          radiusInRadians,
+        ],
+      },
+    };
   }
 
   const skip = (page - 1) * limit;
 
   const [warehouses, total] = await Promise.all([
     Warehouse.find(filter).skip(skip).limit(limit).populate('managerId', 'name email phone'),
-    Warehouse.countDocuments(filter),
+    Warehouse.countDocuments(countFilter),
   ]);
 
   const userLat = hasCoordinates ? parseFloat(latitude) : null;

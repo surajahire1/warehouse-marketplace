@@ -79,6 +79,14 @@ import { CapacityGaugeComponent } from '../../../shared/components/capacity-gaug
           </button>
           <button 
             type="button"
+            (click)="selectCityFilter('Navsari')"
+            class="px-3 py-1 rounded-full text-xs font-medium transition"
+            [ngClass]="selectedCity === 'Navsari' ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
+          >
+            📍 Surat / Navsari
+          </button>
+          <button 
+            type="button"
             (click)="selectCityFilter('Bhiwandi')"
             class="px-3 py-1 rounded-full text-xs font-medium transition"
             [ngClass]="selectedCity === 'Bhiwandi' ? 'bg-indigo-600 text-white font-bold' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'"
@@ -265,6 +273,7 @@ export class WarehouseListComponent implements OnInit {
         this.locating.set(false);
         this.userLat = pos.coords.latitude;
         this.userLng = pos.coords.longitude;
+        this.selectedCity = ''; // Clear city text so proximity search matches all warehouses within radius
         this.applyFilters();
       },
       (err) => {
@@ -278,6 +287,8 @@ export class WarehouseListComponent implements OnInit {
 
   selectCityFilter(city: string) {
     this.selectedCity = city;
+    this.userLat = null; // Clear GPS coordinates when explicitly selecting a city hub
+    this.userLng = null;
     this.applyFilters();
   }
 
