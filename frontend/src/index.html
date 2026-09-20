@@ -12,5 +12,16 @@
 </head>
 <body class="bg-gray-50 text-gray-900 antialiased selection:bg-indigo-500 selection:text-white">
   <app-root></app-root>
+  <div id="google_translate_element" style="display: none;"></div>
+  <script type="text/javascript">
+    function googleTranslateElementInit() {
+      new google.translate.TranslateElement({
+        pageLanguage: 'en',
+        includedLanguages: 'en,hi,mr,gu,ta,te,kn,bn,pa,ml,ur',
+        autoDisplay: false
+      }, 'google_translate_element');
+    }
+  </script>
+  <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 </body>
 </html>

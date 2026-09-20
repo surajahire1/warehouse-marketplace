@@ -2,11 +2,12 @@ import { Component, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { LanguageSelectorComponent } from '../language-selector/language-selector.component';
 
 @Component({
   selector: 'app-navbar',
   standalone: true,
-  imports: [CommonModule, RouterLink, RouterLinkActive],
+  imports: [CommonModule, RouterLink, RouterLinkActive, LanguageSelectorComponent],
   template: `
     <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
@@ -36,8 +37,11 @@ import { AuthService } from '../../../core/services/auth.service';
           }
         </nav>
 
-        <!-- User Actions -->
+        <!-- User Actions & Language Switcher -->
         <div class="flex items-center gap-3">
+          <!-- Mother Tongue Language Selector -->
+          <app-language-selector />
+
           @if (authService.isAuthenticated()) {
             <div class="flex items-center gap-3">
               <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 uppercase">

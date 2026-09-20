@@ -11,4 +11,38 @@ body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   margin: 0;
   padding: 0;
+  top: 0px !important;
+  position: static !important;
 }
+
+/* Suppress Google Translate default banner, tooltips, and layout shifts */
+.goog-te-banner-frame.skiptranslate,
+.goog-te-banner-frame {
+  display: none !important;
+}
+
+.goog-tooltip,
+.goog-tooltip:hover {
+  display: none !important;
+}
+
+.goog-text-highlight {
+  background-color: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+}
+
+#google_translate_element {
+  display: none !important;
+}
+
+.skiptranslate iframe {
+  display: none !important;
+}
+
+.goog-te-combo {
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
