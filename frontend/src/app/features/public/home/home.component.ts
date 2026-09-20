@@ -24,7 +24,21 @@ import { FormsModule } from '@angular/forms';
         <!-- Search Bar Card -->
         <div class="mt-10 max-w-3xl mx-auto bg-white p-4 rounded-2xl shadow-xl border border-gray-100 flex flex-col sm:flex-row gap-3">
           <div class="flex-1 text-left">
-            <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider">City or Location</label>
+            <div class="flex justify-between items-center">
+              <label class="block text-xs font-medium text-gray-500 uppercase tracking-wider">City or Location</label>
+              <button 
+                type="button" 
+                (click)="onFindNearest()" 
+                [disabled]="locating"
+                class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition inline-flex items-center gap-1 disabled:opacity-50"
+              >
+                @if (locating) {
+                  <span class="animate-spin">⏳</span> Locating...
+                } @else {
+                  <span>📍 Near Me (GPS)</span>
+                }
+              </button>
+            </div>
             <input 
               type="text" 
               [(ngModel)]="searchCity" 
@@ -49,6 +63,32 @@ import { FormsModule } from '@angular/forms';
               Search Space
             </button>
           </div>
+        </div>
+
+        <!-- Quick Indian Logistics Hubs -->
+        <div class="mt-4 flex flex-wrap items-center justify-center gap-2 text-xs">
+          <span class="text-gray-400 font-medium">Popular Hubs:</span>
+          <button 
+            type="button"
+            (click)="selectHub('Bhiwandi')"
+            class="px-3 py-1 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 rounded-full text-gray-700 font-medium transition shadow-xs"
+          >
+            📍 Mumbai / Bhiwandi
+          </button>
+          <button 
+            type="button"
+            (click)="selectHub('Gurugram')"
+            class="px-3 py-1 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 rounded-full text-gray-700 font-medium transition shadow-xs"
+          >
+            📍 Delhi-NCR / Gurugram
+          </button>
+          <button 
+            type="button"
+            (click)="selectHub('Hoskote')"
+            class="px-3 py-1 bg-white hover:bg-indigo-50 border border-gray-200 hover:border-indigo-300 rounded-full text-gray-700 font-medium transition shadow-xs"
+          >
+            📍 Bengaluru / Hoskote
+          </button>
         </div>
 
         <!-- Value Props -->
@@ -77,6 +117,7 @@ export class HomeComponent {
   private router = inject(Router);
   searchCity = '';
   searchCapacity: number | null = null;
+  locating = false;
 
   onSearch() {
     this.router.navigate(['/warehouses'], {
@@ -85,5 +126,39 @@ export class HomeComponent {
         minCapacity: this.searchCapacity || undefined,
       },
     });
+  }
+
+  selectHub(hubCity: string) {
+    this.searchCity = hubCity;
+    this.onSearch();
+  }
+
+  onFindNearest() {
+    if (typeof window === 'undefined' || !navigator.geolocation) {
+      alert('Geolocation is not supported by your browser.');
+      return;
+    }
+
+    this.locating = true;
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        this.locating = false;
+        const lat = pos.coords.latitude;
+        const lng = pos.coords.longitude;
+        this.router.navigate(['/warehouses'], {
+          queryParams: {
+            latitude: lat,
+            longitude: lng,
+            radiusKm: 500,
+          },
+        });
+      },
+      (err) => {
+        this.locating = false;
+        console.warn('Geolocation error:', err);
+        alert('Could not access your location. Please check browser permissions or search by city name.');
+      },
+      { timeout: 10000, enableHighAccuracy: true }
+    );
   }
 }

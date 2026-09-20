@@ -32,6 +32,7 @@ export interface Warehouse {
   verificationStatus: VerificationStatus;
   rejectionReason?: string;
   isActive: boolean;
+  distanceKm?: number;
   createdAt?: string;
 }
 

@@ -40,11 +40,25 @@ export const createWarehouseListing = async (managerId, data) => {
   return warehouse;
 };
 
+const calculateHaversineKm = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Earth radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return Math.round(R * c * 10) / 10;
+};
+
 export const searchWarehouses = async (queryFilters) => {
   const {
     longitude,
     latitude,
-    radiusKm = 50,
+    radiusKm,
     city,
     minCapacity,
     maxPrice,
@@ -58,15 +72,22 @@ export const searchWarehouses = async (queryFilters) => {
     verificationStatus: VERIFICATION_STATUS.APPROVED,
   };
 
+  const hasCoordinates =
+    longitude !== undefined &&
+    latitude !== undefined &&
+    !isNaN(parseFloat(longitude)) &&
+    !isNaN(parseFloat(latitude));
+
   // Geospatial proximity query
-  if (longitude !== undefined && latitude !== undefined) {
+  if (hasCoordinates) {
+    const maxDist = radiusKm ? parseFloat(radiusKm) * 1000 : 500 * 1000; // default 500km radius
     filter.location = {
       $nearSphere: {
         $geometry: {
           type: 'Point',
           coordinates: [parseFloat(longitude), parseFloat(latitude)],
         },
-        $maxDistance: radiusKm * 1000, // convert km to meters
+        $maxDistance: maxDist,
       },
     };
   }
@@ -97,8 +118,21 @@ export const searchWarehouses = async (queryFilters) => {
     Warehouse.countDocuments(filter),
   ]);
 
+  const userLat = hasCoordinates ? parseFloat(latitude) : null;
+  const userLng = hasCoordinates ? parseFloat(longitude) : null;
+
+  const enrichedWarehouses = warehouses.map((w) => {
+    const doc = w.toObject();
+    if (userLat !== null && userLng !== null && doc.location?.coordinates?.length === 2) {
+      const wLng = doc.location.coordinates[0];
+      const wLat = doc.location.coordinates[1];
+      doc.distanceKm = calculateHaversineKm(userLat, userLng, wLat, wLng);
+    }
+    return doc;
+  });
+
   return {
-    warehouses,
+    warehouses: enrichedWarehouses,
     pagination: {
       page: Number(page),
       limit: Number(limit),
