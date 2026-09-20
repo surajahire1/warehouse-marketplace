@@ -7,22 +7,46 @@ import { environment } from '../../../../environments/environment';
 import { Warehouse } from '../../../core/models/warehouse.model';
 import { ApiResponse } from '../../../core/models/api-response.model';
 import { CapacityGaugeComponent } from '../../../shared/components/capacity-gauge/capacity-gauge.component';
+import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/warehouse-map.component';
 
 @Component({
   selector: 'app-warehouse-list',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, CapacityGaugeComponent],
+  imports: [CommonModule, RouterLink, FormsModule, CapacityGaugeComponent, WarehouseMapComponent],
   template: `
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
-      <!-- Title & Search Header -->
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <!-- Title & Controls Header -->
       <div class="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4 mb-6">
         <div>
           <h1 class="text-2xl font-bold text-gray-900">Available Warehouses</h1>
           <p class="text-sm text-gray-500 mt-1">Browse verified commercial facilities with live capacity and proximity search.</p>
         </div>
 
-        <!-- Near Me & GPS Controls -->
-        <div class="flex flex-wrap items-center gap-2 w-full lg:w-auto">
+        <!-- View Mode & GPS Controls -->
+        <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto">
+          <!-- View Switcher (Grid vs Split Map) -->
+          <div class="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200">
+            <button
+              type="button"
+              (click)="viewMode = 'grid'"
+              class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5"
+              [ngClass]="viewMode === 'grid' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'"
+            >
+              <span>▦</span>
+              <span>Grid</span>
+            </button>
+            <button
+              type="button"
+              (click)="viewMode = 'split'"
+              class="px-3 py-1.5 rounded-md text-xs font-bold transition flex items-center gap-1.5"
+              [ngClass]="viewMode === 'split' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500 hover:text-gray-900'"
+            >
+              <span>🗺️</span>
+              <span>Split Map</span>
+            </button>
+          </div>
+
+          <!-- Near Me & GPS Controls -->
           <button 
             type="button"
             (click)="onFindNearest()"
@@ -65,10 +89,10 @@ import { CapacityGaugeComponent } from '../../../shared/components/capacity-gaug
       </div>
 
       <!-- Quick Filter Bar -->
-      <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-8 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
+      <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-6 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
         <!-- Hub Filter Chips -->
         <div class="flex flex-wrap items-center gap-2 text-xs">
-          <span class="text-gray-400 font-semibold uppercase text-[10px]">Hub:</span>
+          <span class="text-gray-400 font-semibold uppercase text-[10px]">Popular Hub:</span>
           <button 
             type="button"
             (click)="selectCityFilter('')"
@@ -141,7 +165,7 @@ import { CapacityGaugeComponent } from '../../../shared/components/capacity-gaug
         </div>
       }
 
-      <!-- Warehouse Grid -->
+      <!-- Loading State -->
       @if (loading()) {
         <div class="py-20 text-center text-gray-500">Loading warehouses...</div>
       } @else if (warehouses().length === 0) {
@@ -152,67 +176,146 @@ import { CapacityGaugeComponent } from '../../../shared/components/capacity-gaug
           </button>
         </div>
       } @else {
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          @for (warehouse of warehouses(); track warehouse._id) {
-            <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col">
-              <div class="h-44 bg-gray-100 relative">
-                @if (warehouse.images && warehouse.images.length > 0) {
-                  <img [src]="warehouse.images[0]" [alt]="warehouse.title" class="w-full h-full object-cover" />
-                } @else {
-                  <div class="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Photo Provided</div>
-                }
 
-                <!-- Price Tag -->
-                <span class="absolute top-3 right-3 bg-white/95 backdrop-blur px-2.5 py-1 rounded-md text-xs font-bold text-gray-900 shadow">
-                  {{ warehouse.currency === 'USD' ? '$' : '₹' }}{{ warehouse.pricePerUnitPerDay }}/{{ warehouse.capacityUnit }}/day
-                </span>
-
-                <!-- Distance Pill Badge (if proximity query) -->
-                @if (warehouse.distanceKm !== undefined) {
-                  <span class="absolute bottom-3 left-3 bg-indigo-600/90 backdrop-blur text-white px-2.5 py-1 rounded-md text-xs font-bold shadow flex items-center gap-1">
-                    <span>📍</span>
-                    <span>{{ warehouse.distanceKm }} km away</span>
-                  </span>
-                }
-              </div>
-
-              <div class="p-5 flex-1 flex flex-col justify-between">
-                <div>
-                  <h3 class="font-bold text-gray-900 text-base leading-tight">{{ warehouse.title }}</h3>
-                  
-                  <div class="flex items-center gap-2 mt-1">
-                    <p class="text-xs text-gray-500 flex items-center gap-1">
-                      <span>📍</span> {{ warehouse.address.city }}, {{ warehouse.address.state }}
-                    </p>
-                    @if (warehouse.distanceKm !== undefined) {
-                      <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
-                        {{ warehouse.distanceKm }} km
-                      </span>
+        <!-- VIEW MODE 1: SPLIT SCREEN (CARDS + INTERACTIVE MAP) -->
+        @if (viewMode === 'split') {
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            
+            <!-- Left Side: Scrollable Warehouse List (6 cols) -->
+            <div class="lg:col-span-6 space-y-4 max-h-[820px] overflow-y-auto pr-2">
+              @for (warehouse of warehouses(); track warehouse._id) {
+                <div 
+                  (mouseenter)="hoveredWarehouseId = warehouse._id"
+                  (mouseleave)="hoveredWarehouseId = null"
+                  class="bg-white p-4 rounded-xl border transition shadow-sm hover:shadow-md flex flex-col sm:flex-row gap-4"
+                  [ngClass]="hoveredWarehouseId === warehouse._id ? 'border-indigo-500 ring-2 ring-indigo-500/20' : 'border-gray-200'"
+                >
+                  <!-- Thumbnail -->
+                  <div class="w-full sm:w-44 h-36 rounded-lg bg-gray-100 overflow-hidden relative flex-shrink-0">
+                    @if (warehouse.images && warehouse.images.length > 0) {
+                      <img [src]="warehouse.images[0]" [alt]="warehouse.title" class="w-full h-full object-cover" />
+                    } @else {
+                      <div class="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Photo</div>
                     }
+                    <span class="absolute top-2 right-2 bg-white/95 backdrop-blur px-2 py-0.5 rounded text-[10px] font-bold text-gray-900 shadow">
+                      {{ warehouse.currency === 'USD' ? '$' : '₹' }}{{ warehouse.pricePerUnitPerDay }}/day
+                    </span>
                   </div>
 
-                  <p class="text-xs text-gray-600 mt-3 line-clamp-2">{{ warehouse.description }}</p>
+                  <!-- Details -->
+                  <div class="flex-1 flex flex-col justify-between">
+                    <div>
+                      <div class="flex items-start justify-between gap-2">
+                        <h3 class="font-bold text-gray-900 text-sm leading-snug">{{ warehouse.title }}</h3>
+                        @if (warehouse.distanceKm !== undefined) {
+                          <span class="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200 whitespace-nowrap">
+                            📍 {{ warehouse.distanceKm }} km
+                          </span>
+                        }
+                      </div>
+
+                      <p class="text-xs text-gray-500 mt-1 flex items-center gap-1">
+                        <span>📍</span> {{ warehouse.address.city }}, {{ warehouse.address.state }}
+                      </p>
+
+                      <p class="text-xs text-gray-600 mt-2 line-clamp-2">{{ warehouse.description }}</p>
+                    </div>
+
+                    <div class="pt-3 mt-3 border-t border-gray-100 flex items-center justify-between">
+                      <span class="text-xs font-semibold text-gray-700">
+                        {{ warehouse.totalCapacity.toLocaleString() }} {{ warehouse.capacityUnit }}
+                      </span>
+                      <a 
+                        [routerLink]="['/warehouses', warehouse._id]"
+                        class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-xs"
+                      >
+                        Reserve Space ➔
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              }
+            </div>
+
+            <!-- Right Side: Sticky Interactive Map (6 cols) -->
+            <div class="lg:col-span-6 sticky top-20 h-[550px] lg:h-[820px]">
+              <app-warehouse-map 
+                [warehouses]="warehouses()"
+                [userLat]="userLat"
+                [userLng]="userLng"
+                [radiusKm]="radiusKm"
+                [selectedWarehouseId]="hoveredWarehouseId"
+                (warehouseSelected)="onWarehouseSelected($event)"
+              />
+            </div>
+          </div>
+        }
+
+        <!-- VIEW MODE 2: FULL GRID VIEW -->
+        @if (viewMode === 'grid') {
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            @for (warehouse of warehouses(); track warehouse._id) {
+              <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm hover:shadow-md transition flex flex-col">
+                <div class="h-44 bg-gray-100 relative">
+                  @if (warehouse.images && warehouse.images.length > 0) {
+                    <img [src]="warehouse.images[0]" [alt]="warehouse.title" class="w-full h-full object-cover" />
+                  } @else {
+                    <div class="w-full h-full flex items-center justify-center text-gray-400 text-xs">No Photo Provided</div>
+                  }
+
+                  <!-- Price Tag -->
+                  <span class="absolute top-3 right-3 bg-white/95 backdrop-blur px-2.5 py-1 rounded-md text-xs font-bold text-gray-900 shadow">
+                    {{ warehouse.currency === 'USD' ? '$' : '₹' }}{{ warehouse.pricePerUnitPerDay }}/{{ warehouse.capacityUnit }}/day
+                  </span>
+
+                  <!-- Distance Pill Badge -->
+                  @if (warehouse.distanceKm !== undefined) {
+                    <span class="absolute bottom-3 left-3 bg-indigo-600/90 backdrop-blur text-white px-2.5 py-1 rounded-md text-xs font-bold shadow flex items-center gap-1">
+                      <span>📍</span>
+                      <span>{{ warehouse.distanceKm }} km away</span>
+                    </span>
+                  }
                 </div>
 
-                <div class="mt-6 pt-4 border-t border-gray-100">
-                  <app-capacity-gauge 
-                    [total]="warehouse.totalCapacity" 
-                    [available]="warehouse.totalCapacity" 
-                    [unit]="warehouse.capacityUnit"
-                  />
-                  <div class="mt-4">
-                    <a 
-                      [routerLink]="['/warehouses', warehouse._id]" 
-                      class="block w-full text-center py-2 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition"
-                    >
-                      View Space & Reserve
-                    </a>
+                <div class="p-5 flex-1 flex flex-col justify-between">
+                  <div>
+                    <h3 class="font-bold text-gray-900 text-base leading-tight">{{ warehouse.title }}</h3>
+                    
+                    <div class="flex items-center gap-2 mt-1">
+                      <p class="text-xs text-gray-500 flex items-center gap-1">
+                        <span>📍</span> {{ warehouse.address.city }}, {{ warehouse.address.state }}
+                      </p>
+                      @if (warehouse.distanceKm !== undefined) {
+                        <span class="text-[10px] font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full border border-indigo-100">
+                          {{ warehouse.distanceKm }} km
+                        </span>
+                      }
+                    </div>
+
+                    <p class="text-xs text-gray-600 mt-3 line-clamp-2">{{ warehouse.description }}</p>
+                  </div>
+
+                  <div class="mt-6 pt-4 border-t border-gray-100">
+                    <app-capacity-gauge 
+                      [total]="warehouse.totalCapacity" 
+                      [available]="warehouse.totalCapacity" 
+                      [unit]="warehouse.capacityUnit"
+                    />
+                    <div class="mt-4">
+                      <a 
+                        [routerLink]="['/warehouses', warehouse._id]" 
+                        class="block w-full text-center py-2 bg-gray-900 text-white text-xs font-semibold rounded-lg hover:bg-gray-800 transition"
+                      >
+                        View Space & Reserve
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          }
-        </div>
+            }
+          </div>
+        }
+
       }
     </div>
   `,
@@ -225,6 +328,9 @@ export class WarehouseListComponent implements OnInit {
   warehouses = signal<Warehouse[]>([]);
   loading = signal<boolean>(true);
   locating = signal<boolean>(false);
+
+  viewMode: 'grid' | 'split' = 'split'; // Default to modern Split Map view!
+  hoveredWarehouseId: string | null = null;
 
   selectedCity: string = '';
   radiusKm: number = 500;
@@ -304,6 +410,14 @@ export class WarehouseListComponent implements OnInit {
     this.userLng = null;
     this.radiusKm = 500;
     this.router.navigate(['/warehouses']);
+  }
+
+  onWarehouseSelected(warehouseId: string) {
+    this.hoveredWarehouseId = warehouseId;
+    const element = document.getElementById(`warehouse-card-${warehouseId}`);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
   }
 
   applyFilters() {
