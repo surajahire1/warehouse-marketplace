@@ -1,6 +1,6 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { Observable, tap } from 'rxjs';
 import { environment } from '../../../environments/environment';
 import { Inquiry } from '../models/inquiry.model';
 import { ApiResponse } from '../models/api-response.model';
@@ -11,6 +11,23 @@ import { ApiResponse } from '../models/api-response.model';
 export class InquiryService {
   private http = inject(HttpClient);
   private apiUrl = `${environment.apiUrl}/inquiries`;
+
+  unreadCustomerCount = signal<number>(0);
+
+  /**
+   * Refreshes the total count of unread host replies for the logged-in customer.
+   */
+  refreshCustomerUnreadCount(): void {
+    this.getMyInquiries().subscribe({
+      next: (res) => {
+        if (res.data) {
+          const totalUnread = res.data.reduce((acc, inq) => acc + (inq.unreadCustomerCount || 0), 0);
+          this.unreadCustomerCount.set(totalUnread);
+        }
+      },
+      error: () => {},
+    });
+  }
 
   /**
    * Retrieves or initializes an inquiry thread for a specific warehouse.
@@ -51,6 +68,10 @@ export class InquiryService {
    * Marks an inquiry thread as read.
    */
   markAsRead(inquiryId: string): Observable<ApiResponse<Inquiry>> {
-    return this.http.patch<ApiResponse<Inquiry>>(`${this.apiUrl}/${inquiryId}/read`, {});
+    return this.http.patch<ApiResponse<Inquiry>>(`${this.apiUrl}/${inquiryId}/read`, {}).pipe(
+      tap(() => {
+        this.refreshCustomerUnreadCount();
+      })
+    );
   }
 }

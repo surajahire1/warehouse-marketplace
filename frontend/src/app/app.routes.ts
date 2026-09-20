@@ -5,6 +5,7 @@ import { WarehouseDetailComponent } from './features/public/warehouse-detail/war
 import { LoginComponent } from './features/auth/login/login.component';
 import { RegisterComponent } from './features/auth/register/register.component';
 import { MyBookingsComponent } from './features/customer/my-bookings/my-bookings.component';
+import { MyInquiriesComponent } from './features/customer/my-inquiries/my-inquiries.component';
 import { ManagerDashboardComponent } from './features/manager/dashboard/dashboard.component';
 import { WarehouseEditorComponent } from './features/manager/warehouse-editor/warehouse-editor.component';
 import { VerificationsComponent } from './features/admin/verifications/verifications.component';
@@ -26,7 +27,12 @@ export const routes: Routes = [
   {
     path: 'my-bookings',
     component: MyBookingsComponent,
-    canActivate: [authGuard, roleGuard(['CUSTOMER'])],
+    canActivate: [authGuard, roleGuard(['CUSTOMER', 'ADMIN'])],
+  },
+  {
+    path: 'my-inquiries',
+    component: MyInquiriesComponent,
+    canActivate: [authGuard, roleGuard(['CUSTOMER', 'ADMIN'])],
   },
 
   // Manager Routes

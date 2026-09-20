@@ -55,8 +55,10 @@ export const getInquiryById = async (inquiryId, userId, userRole) => {
     throw new ApiError(404, 'Inquiry conversation not found');
   }
 
-  const isCustomer = inquiry.customerId._id.toString() === userId.toString();
-  const isManager = inquiry.managerId._id.toString() === userId.toString();
+  const customerIdStr = (inquiry.customerId?._id || inquiry.customerId)?.toString();
+  const managerIdStr = (inquiry.managerId?._id || inquiry.managerId)?.toString();
+  const isCustomer = customerIdStr === userId.toString();
+  const isManager = managerIdStr === userId.toString();
 
   if (!isCustomer && !isManager && userRole !== 'ADMIN') {
     throw new ApiError(403, 'Not authorized to view this inquiry thread');

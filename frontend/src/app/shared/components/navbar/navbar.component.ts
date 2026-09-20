@@ -1,7 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
+import { InquiryService } from '../../../core/services/inquiry.service';
 import { LanguageSelectorComponent } from '../language-selector/language-selector.component';
 
 @Component({
@@ -25,6 +26,14 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
           
           @if (authService.isCustomer()) {
             <a routerLink="/my-bookings" routerLinkActive="text-indigo-600 font-semibold" class="hover:text-gray-900 transition">My Bookings</a>
+            <a routerLink="/my-inquiries" routerLinkActive="text-indigo-600 font-semibold" class="hover:text-gray-900 transition relative inline-flex items-center gap-1.5">
+              <span>Messages</span>
+              @if (inquiryService.unreadCustomerCount() > 0) {
+                <span class="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-black text-white bg-indigo-600 rounded-full animate-pulse shadow-xs">
+                  {{ inquiryService.unreadCustomerCount() }}
+                </span>
+              }
+            </a>
           }
 
           @if (authService.isManager()) {
@@ -65,6 +74,13 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
     </header>
   `,
 })
-export class NavbarComponent {
+export class NavbarComponent implements OnInit {
   authService = inject(AuthService);
+  inquiryService = inject(InquiryService);
+
+  ngOnInit() {
+    if (this.authService.isAuthenticated() && this.authService.isCustomer()) {
+      this.inquiryService.refreshCustomerUnreadCount();
+    }
+  }
 }
