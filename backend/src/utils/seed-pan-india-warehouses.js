@@ -1,7 +1,9 @@
+import mongoose from 'mongoose';
+import { config } from '../config/env.js';
 import { User, USER_ROLES } from '../models/User.js';
 import { Warehouse, CAPACITY_UNITS, VERIFICATION_STATUS } from '../models/Warehouse.js';
 
-export const panIndiaWarehouses = [
+const panIndiaWarehouses = [
   {
     title: 'Bhiwandi Grade-A Mega Logistics Park (Mumbai MMR)',
     description: 'Premier 36ft clear height fulfillment depot on the Mumbai-Nashik corridor (NH-160). Built with FM2 laser screed flooring, 20 automatic dock levelers, NFPA sprinkler compliance, and direct connectivity to JNPT Port and Mumbai consumption centres.',
@@ -389,29 +391,29 @@ export const panIndiaWarehouses = [
   },
 ];
 
-export const seedInitialData = async () => {
+async function runSeed() {
   try {
-    const existingCount = await Warehouse.countDocuments({ 'address.country': 'India' });
-    if (existingCount >= 10) return;
+    await mongoose.connect(config.mongoUri);
+    console.log('[Seed Script] Connected to MongoDB');
 
-    console.log('[Seeder] Seeding Pan-India logistics facilities across popular states...');
-
-    // Find manager (prefer palmbee, fallback to manager@example.com)
+    // Find the manager user (prefer palmbee@gmail.com, fallback to manager@example.com)
     let manager = await User.findOne({ email: 'palmbee@gmail.com' });
     if (!manager) {
       manager = await User.findOne({ role: USER_ROLES.MANAGER });
     }
+
     if (!manager) {
-      manager = await User.create({
-        name: 'Apex India Logistics Host',
-        email: 'manager@example.com',
-        password: 'password123',
-        role: USER_ROLES.MANAGER,
-        phone: '+91 98200 12345',
-        isVerified: true,
-      });
+      console.error('No manager user found in database!');
+      process.exit(1);
     }
 
+    console.log(`[Seed Script] Assigning all warehouses to Host/Manager: ${manager.name} (${manager.email})`);
+
+    // Remove existing demo warehouses to prevent duplicates and re-populate cleanly
+    const deletedCount = await Warehouse.deleteMany({});
+    console.log(`[Seed Script] Cleared ${deletedCount.deletedCount} old warehouses.`);
+
+    // Insert all 16 Pan-India warehouses under this single manager
     const warehousesToInsert = panIndiaWarehouses.map((wh) => ({
       ...wh,
       managerId: manager._id,
@@ -419,11 +421,20 @@ export const seedInitialData = async () => {
       isActive: true,
     }));
 
-    await Warehouse.deleteMany({});
-    await Warehouse.insertMany(warehousesToInsert);
+    const inserted = await Warehouse.insertMany(warehousesToInsert);
+    console.log(`[Seed Script] Successfully seeded ${inserted.length} Pan-India warehouses across 14 states!`);
 
-    console.log(`[Seeder] Seeded ${warehousesToInsert.length} Pan-India warehouses successfully.`);
+    for (const w of inserted) {
+      console.log(`  ✓ ${w.title} (${w.address.city}, ${w.address.state}) - [${w.location.coordinates[0]}, ${w.location.coordinates[1]}]`);
+    }
+
+    await mongoose.disconnect();
+    console.log('[Seed Script] Done!');
+    process.exit(0);
   } catch (err) {
-    console.warn(`[Seeder Warning] Pan-India warehouse seeding: ${err.message}`);
+    console.error('[Seed Script Error]', err);
+    process.exit(1);
   }
-};
+}
+
+runSeed();
