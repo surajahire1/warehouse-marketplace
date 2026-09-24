@@ -37,8 +37,9 @@ services:
   # =======================================================
   # 2. Frontend Static Site (Angular 18 SPA)
   # =======================================================
-  - type: static
+  - type: web
     name: warehouse-marketplace-frontend
+    runtime: static
     plan: free
     region: oregon
     rootDir: frontend
