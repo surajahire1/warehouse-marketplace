@@ -40,12 +40,9 @@ services:
   - type: web
     name: warehouse-marketplace-frontend
     runtime: static
-    plan: free
-    region: oregon
     rootDir: frontend
     buildCommand: npm install && node scripts/set-env.js && npm run build
     staticPublishPath: dist/warehouse-marketplace-frontend/browser
-    autoDeploy: true
     routes:
       - type: rewrite
         source: /*
