@@ -29,7 +29,7 @@ import { ApiResponse } from '../../../core/models/api-response.model';
       <!-- Controls & Filter Bar -->
       <div class="bg-white p-4 rounded-2xl border border-gray-200 shadow-sm mb-6 flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4">
         <!-- Role Tabs -->
-        <div class="flex gap-2">
+        <div class="flex flex-wrap gap-2">
           <button 
             type="button" 
             (click)="setFilter('')" 
@@ -68,7 +68,7 @@ import { ApiResponse } from '../../../core/models/api-response.model';
         </div>
       </div>
 
-      <!-- Users Table -->
+      <!-- Users List -->
       @if (loading()) {
         <div class="py-20 text-center text-xs text-gray-500">Loading registered users...</div>
       } @else if (users().length === 0) {
@@ -76,7 +76,40 @@ import { ApiResponse } from '../../../core/models/api-response.model';
           <p class="text-sm text-gray-500">No users found matching your query.</p>
         </div>
       } @else {
-        <div class="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+        <!-- Mobile User Cards (< md) -->
+        <div class="md:hidden space-y-3">
+          @for (user of users(); track user._id) {
+            <div class="bg-white rounded-2xl border border-gray-200 p-4 shadow-2xs space-y-2.5">
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <h4 class="font-bold text-gray-900 text-sm">{{ user.name || 'Anonymous User' }}</h4>
+                  <p class="text-xs text-gray-500">{{ user.email }}</p>
+                </div>
+                <span 
+                  class="inline-block px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider shrink-0"
+                  [ngClass]="{
+                    'bg-blue-100 text-blue-800': user.role === 'CUSTOMER',
+                    'bg-purple-100 text-purple-800': user.role === 'MANAGER',
+                    'bg-emerald-100 text-emerald-800': user.role === 'ADMIN'
+                  }"
+                >
+                  {{ user.role === 'MANAGER' ? 'HOST' : user.role }}
+                </span>
+              </div>
+              <div class="pt-2 border-t border-gray-100 flex items-center justify-between text-xs text-gray-600">
+                <span class="flex items-center gap-1">
+                  <span>📞</span> {{ user.phone || 'No phone' }}
+                </span>
+                <span class="text-gray-400 text-[11px]">
+                  Joined {{ user.createdAt | date:'shortDate' }}
+                </span>
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Desktop Users Table (hidden md:block) -->
+        <div class="hidden md:block bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
               <thead class="bg-gray-50/80 text-xs font-bold text-gray-500 uppercase border-b border-gray-100">

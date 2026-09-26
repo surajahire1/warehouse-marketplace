@@ -286,7 +286,7 @@ declare var window: any;
 
           <!-- Availability & Booking Checkout Sidebar -->
           <div class="lg:col-span-1">
-            <div class="bg-white p-6 rounded-2xl border border-gray-200 shadow-sm sticky top-24 space-y-5">
+            <div class="bg-white p-5 sm:p-6 rounded-2xl border border-gray-200 shadow-sm lg:sticky lg:top-24 space-y-5">
               <div class="flex justify-between items-baseline border-b border-gray-100 pb-4">
                 <span class="text-2xl font-black text-gray-900">
                   {{ warehouse()!.currency === 'USD' ? '$' : '₹' }}{{ warehouse()!.pricePerUnitPerDay }}

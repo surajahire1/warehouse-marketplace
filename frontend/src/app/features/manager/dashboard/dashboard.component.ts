@@ -93,7 +93,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
           </div>
 
           <!-- Filter Tabs -->
-          <div class="flex gap-2">
+          <div class="flex flex-wrap gap-2">
             <button 
               type="button" 
               (click)="bookingFilter = 'PENDING'"
@@ -305,7 +305,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
           <div class="divide-y divide-gray-100">
             @for (item of warehouses(); track item._id) {
               <div class="p-6 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 hover:bg-gray-50/60 transition">
-                <div class="flex items-center gap-4">
+                <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-1">
                   <div class="w-16 h-16 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
                     @if (item.images && item.images.length > 0) {
                       <img [src]="item.images[0]" class="w-full h-full object-cover" />
@@ -314,7 +314,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                     }
                   </div>
                   <div>
-                    <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-2 flex-wrap">
                       <h3 class="font-bold text-sm text-gray-900">{{ item.title }}</h3>
                       <!-- Verification status badge -->
                       <span 
@@ -334,7 +334,7 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
                   </div>
                 </div>
 
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 w-full sm:w-auto justify-end">
                   <a 
                     [routerLink]="['/manager/warehouses', item._id, 'edit']" 
                     class="px-3 py-1.5 border border-gray-200 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-50 transition shadow-sm"

@@ -122,7 +122,7 @@ import { AuthService } from '../../core/services/auth.service';
               <label class="block text-xs font-semibold text-gray-700">Mobile / WhatsApp Number</label>
               <div class="mt-1.5 flex gap-2">
                 <!-- Country Code Selector -->
-                <div class="w-32 shrink-0">
+                <div class="w-28 sm:w-32 shrink-0">
                   <select 
                     [(ngModel)]="countryCode" 
                     name="countryCode"

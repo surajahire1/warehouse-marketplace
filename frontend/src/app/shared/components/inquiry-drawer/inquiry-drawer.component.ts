@@ -33,9 +33,9 @@ import { Inquiry, InquiryMessage } from '../../../core/models/inquiry.model';
 
       <!-- Slide-over Drawer Panel -->
       <div 
-        class="fixed inset-y-0 right-0 max-w-full flex pl-10 z-[2001] animate-slide-in"
+        class="fixed inset-y-0 right-0 max-w-full flex pl-0 sm:pl-10 z-[2001] animate-slide-in"
       >
-        <div class="w-screen max-w-md bg-white shadow-2xl flex flex-col h-full border-l border-gray-200">
+        <div class="w-screen max-w-full sm:max-w-md bg-white shadow-2xl flex flex-col h-full border-l border-gray-200">
           
           <!-- Drawer Header -->
           <div class="px-5 py-4 border-b border-gray-200 bg-gray-50 flex items-center justify-between">

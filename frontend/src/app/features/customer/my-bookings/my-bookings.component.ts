@@ -35,7 +35,95 @@ import { ReviewService } from '../../../core/services/review.service';
           </a>
         </div>
       } @else {
-        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
+        <!-- Mobile Card View (< md) -->
+        <div class="md:hidden space-y-4">
+          @for (booking of bookings(); track booking._id) {
+            <div class="bg-white rounded-2xl border border-gray-200 p-5 shadow-xs space-y-3.5">
+              <!-- Header: Title & Badges -->
+              <div class="flex items-start justify-between gap-2">
+                <div>
+                  <h3 class="font-bold text-gray-900 text-sm leading-snug">{{ getWarehouseTitle(booking.warehouseId) }}</h3>
+                  <p class="text-xs text-gray-500 mt-0.5">📍 {{ getWarehouseCity(booking.warehouseId) }}</p>
+                </div>
+                <app-status-badge [status]="booking.status" />
+              </div>
+
+              <!-- Details Grid -->
+              <div class="grid grid-cols-2 gap-2.5 py-3 border-y border-gray-100 text-xs">
+                <div>
+                  <span class="text-[10px] text-gray-400 uppercase font-semibold block">Dates</span>
+                  <span class="font-medium text-gray-700">
+                    {{ booking.startDate | date:'shortDate' }} → {{ booking.endDate | date:'shortDate' }}
+                  </span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-gray-400 uppercase font-semibold block">Reserved Space</span>
+                  <span class="font-medium text-gray-700">
+                    {{ booking.quantityBooked }} {{ getCapacityUnit(booking.warehouseId) }}
+                  </span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-gray-400 uppercase font-semibold block">Total Amount</span>
+                  <span class="font-bold text-gray-900">
+                    {{ booking.currency === 'USD' ? '$' : '₹' }}{{ booking.totalAmount.toLocaleString() }}
+                  </span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-gray-400 uppercase font-semibold block">Escrow Protection</span>
+                  @if (booking.paymentStatus === 'HELD_IN_ESCROW') {
+                    <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
+                      🛡️ In Escrow
+                    </span>
+                  } @else if (booking.paymentStatus === 'DISBURSED') {
+                    <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                      💰 Disbursed
+                    </span>
+                  } @else if (booking.paymentStatus === 'REFUNDED') {
+                    <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 border border-rose-200">
+                      ↩️ Refunded
+                    </span>
+                  } @else {
+                    <span class="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                      ⏳ Unpaid
+                    </span>
+                  }
+                </div>
+              </div>
+
+              <!-- Action Buttons -->
+              <div class="flex items-center justify-end gap-2 pt-1">
+                @if (isReviewable(booking)) {
+                  @if (hasReviewed(booking._id)) {
+                    <span class="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      ✓ Reviewed
+                    </span>
+                  } @else {
+                    <button
+                      type="button"
+                      (click)="openReviewModal(booking)"
+                      class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg shadow-xs transition inline-flex items-center gap-1"
+                    >
+                      ⭐ Review
+                    </button>
+                  }
+                }
+
+                @if (booking.paymentId || booking.paymentStatus === 'HELD_IN_ESCROW' || booking.paymentStatus === 'DISBURSED') {
+                  <button 
+                    type="button" 
+                    (click)="openReceipt(booking)"
+                    class="px-3 py-1.5 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-lg border border-indigo-200 transition shadow-xs inline-flex items-center gap-1"
+                  >
+                    🧾 Receipt
+                  </button>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <!-- Desktop Table View (hidden md:block) -->
+        <div class="hidden md:block bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
           <div class="overflow-x-auto">
             <table class="w-full text-left text-sm">
               <thead class="bg-gray-50 text-xs font-semibold text-gray-500 uppercase border-b border-gray-200">

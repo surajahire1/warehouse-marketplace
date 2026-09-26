@@ -173,15 +173,176 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
               }
             </div>
           } @else {
-            <a routerLink="/auth/login" class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition px-3 py-2">
-              Sign In
-            </a>
-            <a routerLink="/auth/register" class="text-sm font-medium bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition shadow-sm">
-              Get Started
-            </a>
+            <div class="hidden sm:flex items-center gap-2">
+              <a routerLink="/auth/login" class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition px-3 py-2">
+                Sign In
+              </a>
+              <a routerLink="/auth/register" class="text-sm font-medium bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition shadow-sm">
+                Get Started
+              </a>
+            </div>
           }
+
+          <!-- Mobile Hamburger Toggle Button (md:hidden) -->
+          <button 
+            type="button" 
+            (click)="toggleMobileMenu($event)"
+            class="md:hidden p-2 rounded-lg text-gray-600 hover:text-gray-900 hover:bg-gray-100 transition focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            aria-label="Toggle navigation menu"
+            [attr.aria-expanded]="isMobileMenuOpen"
+          >
+            @if (isMobileMenuOpen) {
+              <!-- Close (X) icon -->
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            } @else {
+              <!-- Hamburger icon -->
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            }
+          </button>
         </div>
       </div>
+
+      <!-- Collapsible Mobile Navigation Drawer (md:hidden) -->
+      @if (isMobileMenuOpen) {
+        <div class="md:hidden border-t border-gray-100 bg-white/98 backdrop-blur-md px-4 pt-3 pb-6 shadow-xl animate-in slide-in-from-top-2 duration-150">
+          <nav class="flex flex-col space-y-2 text-sm font-medium text-gray-700">
+            <a 
+              routerLink="/warehouses" 
+              (click)="closeMobileMenu()" 
+              routerLinkActive="text-indigo-600 bg-indigo-50/70 font-semibold" 
+              class="px-3 py-2 rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
+            >
+              <span>🏢</span>
+              <span>Browse Warehouses</span>
+            </a>
+
+            @if (authService.isCustomer()) {
+              <a 
+                routerLink="/my-bookings" 
+                (click)="closeMobileMenu()" 
+                routerLinkActive="text-indigo-600 bg-indigo-50/70 font-semibold" 
+                class="px-3 py-2 rounded-lg hover:bg-gray-50 transition flex items-center justify-between"
+              >
+                <span class="flex items-center gap-2">
+                  <span>📦</span>
+                  <span>My Bookings</span>
+                </span>
+                <span class="text-xs text-gray-400">Escrow Protected</span>
+              </a>
+
+              <a 
+                routerLink="/my-inquiries" 
+                (click)="closeMobileMenu()" 
+                routerLinkActive="text-indigo-600 bg-indigo-50/70 font-semibold" 
+                class="px-3 py-2 rounded-lg hover:bg-gray-50 transition flex items-center justify-between"
+              >
+                <span class="flex items-center gap-2">
+                  <span>💬</span>
+                  <span>Messages & Discussions</span>
+                </span>
+                @if (inquiryService.unreadCustomerCount() > 0) {
+                  <span class="inline-flex items-center justify-center px-2 py-0.5 text-xs font-black text-white bg-indigo-600 rounded-full animate-pulse shadow-xs">
+                    {{ inquiryService.unreadCustomerCount() }} new
+                  </span>
+                }
+              </a>
+            }
+
+            @if (authService.isManager()) {
+              <a 
+                routerLink="/manager/dashboard" 
+                (click)="closeMobileMenu()" 
+                routerLinkActive="text-indigo-600 bg-indigo-50/70 font-semibold" 
+                class="px-3 py-2 rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
+              >
+                <span>📊</span>
+                <span>Manager Dashboard</span>
+              </a>
+              <a 
+                routerLink="/manager/warehouses/new" 
+                (click)="closeMobileMenu()" 
+                class="px-3 py-2 rounded-lg text-indigo-600 hover:bg-indigo-50/70 transition flex items-center gap-2 font-semibold"
+              >
+                <span>➕</span>
+                <span>List New Warehouse</span>
+              </a>
+            }
+
+            @if (authService.isAdmin()) {
+              <a 
+                routerLink="/admin/verifications" 
+                (click)="closeMobileMenu()" 
+                routerLinkActive="text-indigo-600 bg-indigo-50/70 font-semibold" 
+                class="px-3 py-2 rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
+              >
+                <span>🛡️</span>
+                <span>Facility Verifications</span>
+              </a>
+              <a 
+                routerLink="/admin/users" 
+                (click)="closeMobileMenu()" 
+                routerLinkActive="text-indigo-600 bg-indigo-50/70 font-semibold" 
+                class="px-3 py-2 rounded-lg hover:bg-gray-50 transition flex items-center gap-2"
+              >
+                <span>👥</span>
+                <span>All Users</span>
+              </a>
+            }
+          </nav>
+
+          <!-- Mobile Auth Actions when logged out -->
+          @if (!authService.isAuthenticated()) {
+            <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
+              <a 
+                routerLink="/auth/login" 
+                (click)="closeMobileMenu()" 
+                class="w-full text-center py-2.5 border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition"
+              >
+                Sign In
+              </a>
+              <a 
+                routerLink="/auth/register" 
+                (click)="closeMobileMenu()" 
+                class="w-full text-center py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold transition shadow-sm"
+              >
+                Get Started
+              </a>
+            </div>
+          } @else {
+            <!-- Mobile Account Shortcuts when logged in -->
+            <div class="mt-4 pt-4 border-t border-gray-100 flex flex-col gap-1.5 text-xs">
+              <button 
+                type="button"
+                (click)="goToTabFromMobile('details')"
+                class="w-full text-left px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg flex items-center gap-2 font-medium"
+              >
+                <span>⚙️</span>
+                <span>Profile Details & Phone</span>
+              </button>
+              <button 
+                type="button"
+                (click)="goToTabFromMobile('password')"
+                class="w-full text-left px-3 py-2 text-gray-600 hover:bg-gray-50 rounded-lg flex items-center gap-2 font-medium"
+              >
+                <span>🔑</span>
+                <span>Change Password</span>
+              </button>
+              <button 
+                type="button"
+                (click)="onLogout()"
+                class="w-full text-left px-3 py-2 text-rose-600 hover:bg-rose-50 rounded-lg flex items-center gap-2 font-semibold"
+              >
+                <span>🚪</span>
+                <span>Sign Out</span>
+              </button>
+            </div>
+          }
+        </div>
+      }
     </header>
   `,
 })
@@ -192,6 +353,7 @@ export class NavbarComponent implements OnInit {
   private elementRef = inject(ElementRef);
 
   isDropdownOpen = false;
+  isMobileMenuOpen = false;
 
   ngOnInit() {
     if (this.authService.isAuthenticated() && this.authService.isCustomer()) {
@@ -202,15 +364,37 @@ export class NavbarComponent implements OnInit {
   toggleDropdown(event: Event) {
     event.stopPropagation();
     this.isDropdownOpen = !this.isDropdownOpen;
+    if (this.isDropdownOpen) {
+      this.isMobileMenuOpen = false;
+    }
+  }
+
+  toggleMobileMenu(event: Event) {
+    event.stopPropagation();
+    this.isMobileMenuOpen = !this.isMobileMenuOpen;
+    if (this.isMobileMenuOpen) {
+      this.isDropdownOpen = false;
+    }
+  }
+
+  closeMobileMenu() {
+    this.isMobileMenuOpen = false;
   }
 
   goToTab(tab: 'details' | 'password') {
     this.isDropdownOpen = false;
+    this.isMobileMenuOpen = false;
+    this.router.navigate(['/profile'], { queryParams: { tab } });
+  }
+
+  goToTabFromMobile(tab: 'details' | 'password') {
+    this.closeMobileMenu();
     this.router.navigate(['/profile'], { queryParams: { tab } });
   }
 
   onLogout() {
     this.isDropdownOpen = false;
+    this.isMobileMenuOpen = false;
     this.authService.logout();
   }
 
@@ -218,6 +402,7 @@ export class NavbarComponent implements OnInit {
   onDocumentClick(event: Event) {
     if (!this.elementRef.nativeElement.contains(event.target)) {
       this.isDropdownOpen = false;
+      this.isMobileMenuOpen = false;
     }
   }
 }

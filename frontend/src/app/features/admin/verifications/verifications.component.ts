@@ -26,7 +26,7 @@ import { ApiResponse } from '../../../core/models/api-response.model';
       </div>
 
       <!-- Tab Filter Selector -->
-      <div class="flex gap-2 mb-6 border-b border-gray-200 pb-3">
+      <div class="flex flex-wrap gap-2 mb-6 border-b border-gray-200 pb-3">
         <button 
           type="button" 
           (click)="setFilter('PENDING')"
@@ -72,7 +72,7 @@ import { ApiResponse } from '../../../core/models/api-response.model';
           @for (item of warehouses(); track item._id) {
             <div class="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-6 hover:border-gray-300 transition">
               <!-- Facility Details -->
-              <div class="flex items-start gap-4 flex-1">
+              <div class="flex flex-col sm:flex-row items-start gap-4 flex-1">
                 <div class="w-20 h-20 rounded-xl bg-gray-100 overflow-hidden flex-shrink-0 border border-gray-200">
                   @if (item.images && item.images.length > 0) {
                     <img [src]="item.images[0]" [alt]="item.title" class="w-full h-full object-cover" />

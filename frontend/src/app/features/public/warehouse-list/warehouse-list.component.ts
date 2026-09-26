@@ -136,18 +136,18 @@ import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/
         </div>
 
         <!-- City Search Input -->
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-2 w-full sm:w-auto">
           <input 
             type="text" 
             [(ngModel)]="selectedCity" 
             (keyup.enter)="applyFilters()"
             placeholder="Search by city..." 
-            class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            class="px-3 py-1.5 border border-gray-200 rounded-lg text-xs w-full sm:w-48 focus:outline-none focus:ring-2 focus:ring-indigo-500"
           />
           <button 
             type="button"
             (click)="applyFilters()" 
-            class="px-3 py-1.5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-lg transition"
+            class="px-3.5 py-1.5 bg-gray-900 hover:bg-gray-800 text-white text-xs font-bold rounded-lg transition shrink-0"
           >
             Filter
           </button>
@@ -231,7 +231,7 @@ import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/
                       <p class="text-xs text-gray-600 mt-2 line-clamp-2">{{ warehouse.description }}</p>
                     </div>
 
-                    <div class="pt-3 mt-3 border-t border-gray-100 flex items-center justify-between">
+                    <div class="pt-3 mt-3 border-t border-gray-100 flex flex-wrap sm:flex-nowrap items-center justify-between gap-3">
                       <div class="flex items-center gap-2 flex-wrap">
                         <span class="text-xs font-semibold text-gray-700">
                           {{ warehouse.totalCapacity.toLocaleString() }} {{ warehouse.capacityUnit }}
@@ -242,7 +242,7 @@ import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/
                       </div>
                       <a 
                         [routerLink]="['/warehouses', warehouse._id]"
-                        class="px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-xs"
+                        class="w-full sm:w-auto text-center px-3.5 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-lg transition shadow-xs"
                       >
                         Reserve Space ➔
                       </a>
@@ -253,7 +253,7 @@ import { WarehouseMapComponent } from '../../../shared/components/warehouse-map/
             </div>
 
             <!-- Right Side: Sticky Interactive Map (6 cols) -->
-            <div class="lg:col-span-6 sticky top-20 h-[550px] lg:h-[820px]">
+            <div class="lg:col-span-6 lg:sticky lg:top-20 h-[360px] sm:h-[480px] lg:h-[820px] w-full">
               <app-warehouse-map 
                 [warehouses]="warehouses()"
                 [userLat]="userLat"
