@@ -12,11 +12,12 @@ import { Inquiry, InquiryMessage } from '../../../core/models/inquiry.model';
 import { InquiryService } from '../../../core/services/inquiry.service';
 import { CapacityGaugeComponent } from '../../../shared/components/capacity-gauge/capacity-gauge.component';
 import { StatusBadgeComponent } from '../../../shared/components/status-badge/status-badge.component';
+import { AnalyticsChartComponent } from './analytics-chart.component';
 
 @Component({
   selector: 'app-manager-dashboard',
   standalone: true,
-  imports: [CommonModule, RouterLink, FormsModule, CapacityGaugeComponent, StatusBadgeComponent],
+  imports: [CommonModule, RouterLink, FormsModule, CapacityGaugeComponent, StatusBadgeComponent, AnalyticsChartComponent],
   template: `
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
       <!-- Top Bar -->
@@ -33,6 +34,14 @@ import { StatusBadgeComponent } from '../../../shared/components/status-badge/st
             <span>+</span> List New Warehouse
           </a>
         </div>
+      </div>
+
+      <!-- Section: Interactive Revenue & Occupancy Analytics Charts -->
+      <div class="mb-10">
+        <app-analytics-chart 
+          [warehouses]="warehouses()" 
+          [bookings]="bookings()" 
+        />
       </div>
 
       <!-- Quick Metrics Grid -->

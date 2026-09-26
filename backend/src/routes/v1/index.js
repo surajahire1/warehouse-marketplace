@@ -6,6 +6,7 @@ import adminRoutes from './admin.routes.js';
 import paymentRoutes from './payment.routes.js';
 import inquiryRoutes from './inquiry.routes.js';
 import reviewRoutes from './review.routes.js';
+import analyticsRoutes from './analytics.routes.js';
 
 const router = Router();
 
@@ -25,5 +26,6 @@ router.use('/admin', adminRoutes);
 router.use('/payments', paymentRoutes);
 router.use('/inquiries', inquiryRoutes);
 router.use('/reviews', reviewRoutes);
+router.use('/analytics', analyticsRoutes);
 
 export default router;
