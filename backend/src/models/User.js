@@ -13,9 +13,9 @@ const userSchema = new mongoose.Schema(
   {
     name: {
       type: String,
-      required: [true, 'Name is required'],
       trim: true,
       maxlength: 100,
+      default: '',
     },
     email: {
       type: String,
@@ -40,6 +40,10 @@ const userSchema = new mongoose.Schema(
     phone: {
       type: String,
       trim: true,
+    },
+    dob: {
+      type: Date,
+      default: null,
     },
     avatar: {
       type: String,

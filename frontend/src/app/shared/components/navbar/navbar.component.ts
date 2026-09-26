@@ -1,6 +1,6 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, ElementRef, HostListener, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { RouterLink, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthService } from '../../../core/services/auth.service';
 import { InquiryService } from '../../../core/services/inquiry.service';
 import { LanguageSelectorComponent } from '../language-selector/language-selector.component';
@@ -9,8 +9,32 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
   selector: 'app-navbar',
   standalone: true,
   imports: [CommonModule, RouterLink, RouterLinkActive, LanguageSelectorComponent],
+  host: {
+    class: 'sticky top-0 z-50 block w-full',
+  },
   template: `
-    <header class="bg-white border-b border-gray-200 sticky top-0 z-50">
+    <!-- Missing Phone Alert Banner for Authenticated Users -->
+    @if (authService.isAuthenticated() && !authService.hasPhone()) {
+      <aside aria-label="Profile notification" class="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs px-4 py-2 shadow-xs">
+        <div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-2">
+          <div class="flex items-center gap-2 text-center sm:text-left">
+            <span class="text-sm">📱</span>
+            <span class="font-medium">
+              Complete your profile: Add your contact number so warehouse operators and shippers can reach you regarding bookings.
+            </span>
+          </div>
+          <a 
+            routerLink="/profile" 
+            [queryParams]="{ tab: 'details' }"
+            class="bg-white text-amber-900 font-bold px-3 py-1 rounded-md text-[11px] hover:bg-amber-50 transition shadow-xs shrink-0"
+          >
+            Add Phone Number &rarr;
+          </a>
+        </div>
+      </aside>
+    }
+
+    <header class="bg-white/95 backdrop-blur-md border-b border-gray-200/80 shadow-xs">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
         <!-- Brand Logo -->
         <a routerLink="/" class="flex items-center gap-2 text-indigo-600 font-bold text-xl tracking-tight">
@@ -52,14 +76,101 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
           <app-language-selector />
 
           @if (authService.isAuthenticated()) {
-            <div class="flex items-center gap-3">
-              <span class="text-xs font-semibold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 uppercase">
-                {{ authService.userRole() }}
-              </span>
-              <span class="text-sm font-medium text-gray-800">{{ authService.currentUser()?.name }}</span>
-              <button (click)="authService.logout()" class="text-sm font-medium text-gray-500 hover:text-red-600 transition">
-                Logout
+            <!-- Profile Dropdown Container -->
+            <div class="relative" #profileDropdown>
+              <button 
+                type="button" 
+                (click)="toggleDropdown($event)"
+                class="flex items-center gap-2 px-3 py-1.5 rounded-full hover:bg-gray-100 transition border border-gray-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                aria-haspopup="true"
+                [attr.aria-expanded]="isDropdownOpen"
+              >
+                <!-- Avatar circle with initial -->
+                <div class="w-7 h-7 rounded-full bg-indigo-600 text-white flex items-center justify-center text-xs font-bold uppercase shadow-xs">
+                  {{ (authService.currentUser()?.name || authService.currentUser()?.email || 'U').charAt(0) }}
+                </div>
+                <div class="flex flex-col text-left hidden sm:flex">
+                  <span class="text-xs font-semibold text-gray-800 leading-tight">
+                    {{ authService.currentUser()?.name || 'My Account' }}
+                  </span>
+                  <span class="text-[10px] text-gray-500 font-medium uppercase leading-tight">
+                    {{ authService.userRole() }}
+                  </span>
+                </div>
+                <!-- Chevron Down icon -->
+                <svg class="w-3.5 h-3.5 text-gray-500 transition-transform duration-200" [ngClass]="{ 'rotate-180': isDropdownOpen }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
               </button>
+
+              <!-- Dropdown Menu -->
+              @if (isDropdownOpen) {
+                <div 
+                  class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl border border-gray-100 py-2 z-50 animate-in fade-in zoom-in-95 duration-100 origin-top-right"
+                >
+                  <!-- Account Summary Header -->
+                  <div class="px-4 py-2.5 border-b border-gray-100">
+                    <p class="text-xs font-bold text-gray-900 truncate">
+                      {{ authService.currentUser()?.name || 'Account User' }}
+                    </p>
+                    <p class="text-[11px] text-gray-500 truncate">
+                      {{ authService.currentUser()?.email }}
+                    </p>
+                    <span 
+                      class="inline-block mt-1.5 px-2 py-0.5 rounded-md text-[10px] font-bold uppercase"
+                      [ngClass]="{
+                        'bg-blue-50 text-blue-700': authService.userRole() === 'CUSTOMER',
+                        'bg-purple-50 text-purple-700': authService.userRole() === 'MANAGER',
+                        'bg-emerald-50 text-emerald-700': authService.userRole() === 'ADMIN'
+                      }"
+                    >
+                      {{ authService.userRole() === 'MANAGER' ? 'HOST' : authService.userRole() }}
+                    </span>
+                  </div>
+
+                  <!-- Menu Links -->
+                  <div class="py-1">
+                    <button 
+                      type="button" 
+                      (click)="goToTab('details')" 
+                      class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition"
+                    >
+                      <svg class="w-4 h-4 text-gray-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      <span class="font-medium">Profile Details</span>
+                    </button>
+
+                    <button 
+                      type="button" 
+                      (click)="goToTab('password')" 
+                      class="w-full text-left px-4 py-2 text-xs text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 flex items-center gap-2.5 transition"
+                    >
+                      <svg class="w-4 h-4 text-gray-400 group-hover:text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                      <span class="font-medium">Change Password</span>
+                    </button>
+                  </div>
+
+                  <!-- Divider -->
+                  <div class="border-t border-gray-100 my-1"></div>
+
+                  <!-- Sign Out -->
+                  <div class="py-1">
+                    <button 
+                      type="button" 
+                      (click)="onLogout()" 
+                      class="w-full text-left px-4 py-2 text-xs text-red-600 hover:bg-red-50 flex items-center gap-2.5 transition font-medium"
+                    >
+                      <svg class="w-4 h-4 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                      </svg>
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                </div>
+              }
             </div>
           } @else {
             <a routerLink="/auth/login" class="text-sm font-medium text-gray-700 hover:text-indigo-600 transition px-3 py-2">
@@ -77,10 +188,36 @@ import { LanguageSelectorComponent } from '../language-selector/language-selecto
 export class NavbarComponent implements OnInit {
   authService = inject(AuthService);
   inquiryService = inject(InquiryService);
+  private router = inject(Router);
+  private elementRef = inject(ElementRef);
+
+  isDropdownOpen = false;
 
   ngOnInit() {
     if (this.authService.isAuthenticated() && this.authService.isCustomer()) {
       this.inquiryService.refreshCustomerUnreadCount();
+    }
+  }
+
+  toggleDropdown(event: Event) {
+    event.stopPropagation();
+    this.isDropdownOpen = !this.isDropdownOpen;
+  }
+
+  goToTab(tab: 'details' | 'password') {
+    this.isDropdownOpen = false;
+    this.router.navigate(['/profile'], { queryParams: { tab } });
+  }
+
+  onLogout() {
+    this.isDropdownOpen = false;
+    this.authService.logout();
+  }
+
+  @HostListener('document:click', ['$event'])
+  onDocumentClick(event: Event) {
+    if (!this.elementRef.nativeElement.contains(event.target)) {
+      this.isDropdownOpen = false;
     }
   }
 }

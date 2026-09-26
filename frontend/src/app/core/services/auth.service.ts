@@ -22,6 +22,7 @@ export class AuthService {
   readonly isCustomer = computed(() => this.currentUser()?.role === 'CUSTOMER');
   readonly isManager = computed(() => this.currentUser()?.role === 'MANAGER');
   readonly isAdmin = computed(() => this.currentUser()?.role === 'ADMIN');
+  readonly hasPhone = computed(() => !!this.currentUser()?.phone?.trim());
 
   private getStoredUser(): User | null {
     try {
@@ -32,7 +33,7 @@ export class AuthService {
     }
   }
 
-  register(payload: { name: string; email: string; password: string; role?: string; phone?: string }): Observable<ApiResponse<AuthResponseData>> {
+  register(payload: { email: string; password: string; phone: string; role?: string; name?: string }): Observable<ApiResponse<AuthResponseData>> {
     return this.http.post<ApiResponse<AuthResponseData>>(`${environment.apiUrl}/auth/register`, payload).pipe(
       tap((res) => this.handleAuthSuccess(res.data))
     );
@@ -42,6 +43,21 @@ export class AuthService {
     return this.http.post<ApiResponse<AuthResponseData>>(`${environment.apiUrl}/auth/login`, credentials).pipe(
       tap((res) => this.handleAuthSuccess(res.data))
     );
+  }
+
+  updateProfile(payload: { name?: string; phone?: string; dob?: string }): Observable<ApiResponse<User>> {
+    return this.http.patch<ApiResponse<User>>(`${environment.apiUrl}/auth/profile`, payload).pipe(
+      tap((res) => {
+        if (res.data) {
+          localStorage.setItem('user', JSON.stringify(res.data));
+          this.currentUser.set(res.data);
+        }
+      })
+    );
+  }
+
+  changePassword(payload: { currentPassword: string; newPassword: string }): Observable<ApiResponse<{ message: string }>> {
+    return this.http.post<ApiResponse<{ message: string }>>(`${environment.apiUrl}/auth/change-password`, payload);
   }
 
   private handleAuthSuccess(data: AuthResponseData) {

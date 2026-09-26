@@ -13,11 +13,11 @@ import { AuthService } from '../../../core/services/auth.service';
       <div class="max-w-md w-full bg-white p-8 rounded-2xl border border-gray-200 shadow-sm space-y-6">
         <div class="text-center">
           <h2 class="text-2xl font-bold text-gray-900">Create an Account</h2>
-          <p class="text-sm text-gray-500 mt-1">Join WareSpace as a Customer or Warehouse Host</p>
+          <p class="text-sm text-gray-500 mt-1">Sign up with your mobile number and email</p>
         </div>
 
         @if (errorMessage()) {
-          <div class="p-3 bg-red-50 text-red-700 text-xs rounded-lg border border-red-200">
+          <div class="p-3 bg-red-50 text-red-700 text-xs rounded-xl border border-red-200">
             {{ errorMessage() }}
           </div>
         }
@@ -43,17 +43,7 @@ import { AuthService } from '../../../core/services/auth.service';
         </div>
 
         <form (ngSubmit)="onSubmit()" class="space-y-4">
-          <div>
-            <label class="block text-xs font-semibold text-gray-700">Full Name / Business Name</label>
-            <input 
-              type="text" 
-              [(ngModel)]="name" 
-              name="name"
-              required 
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
-            />
-          </div>
-
+          <!-- Email Address -->
           <div>
             <label class="block text-xs font-semibold text-gray-700">Email Address</label>
             <input 
@@ -61,28 +51,67 @@ import { AuthService } from '../../../core/services/auth.service';
               [(ngModel)]="email" 
               name="email"
               required 
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
+              placeholder="name@example.com"
+              class="w-full mt-1.5 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
             />
           </div>
 
+          <!-- Mobile Number with Country Code -->
+          <div>
+            <label class="block text-xs font-semibold text-gray-700">Mobile Number</label>
+            <div class="mt-1.5 flex gap-2">
+              <!-- Country Code Selector -->
+              <div class="w-32 shrink-0">
+                <select 
+                  [(ngModel)]="countryCode" 
+                  name="countryCode"
+                  class="w-full px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-semibold text-gray-700 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                >
+                  <option value="+91">🇮🇳 +91 (IN)</option>
+                  <option value="+1">🇺🇸 +1 (US/CA)</option>
+                  <option value="+44">🇬🇧 +44 (UK)</option>
+                  <option value="+971">🇦🇪 +971 (UAE)</option>
+                  <option value="+65">🇸🇬 +65 (SG)</option>
+                  <option value="+61">🇦🇺 +61 (AU)</option>
+                  <option value="+49">🇩🇪 +49 (DE)</option>
+                  <option value="+33">🇫🇷 +33 (FR)</option>
+                  <option value="+81">🇯🇵 +81 (JP)</option>
+                </select>
+              </div>
+
+              <!-- National Mobile Input -->
+              <input 
+                type="tel" 
+                [(ngModel)]="phoneNumber" 
+                name="phoneNumber"
+                required
+                placeholder="98200 12345"
+                class="flex-1 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
+              />
+            </div>
+            <p class="text-[11px] text-gray-400 mt-1">Used for instant SMS/WhatsApp booking alerts.</p>
+          </div>
+
+          <!-- Password -->
           <div>
             <label class="block text-xs font-semibold text-gray-700">Password</label>
             <input 
               type="password" 
               [(ngModel)]="password" 
-              name="password"
-              minlength="6"
+              name="password" 
+              minlength="6" 
               required 
-              class="w-full mt-1 px-3 py-2 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
+              placeholder="At least 6 characters"
+              class="w-full mt-1.5 px-3.5 py-2.5 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none" 
             />
           </div>
 
           <button 
             type="submit" 
             [disabled]="loading()"
-            class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-lg shadow-sm transition disabled:opacity-50"
+            class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-sm rounded-xl shadow-sm transition disabled:opacity-50 mt-2"
           >
-            {{ loading() ? 'Creating Account...' : 'Register as ' + (role === 'MANAGER' ? 'Host' : 'Customer') }}
+            {{ loading() ? 'Creating Account...' : 'Register as ' + (role === 'MANAGER' ? 'Warehouse Host' : 'Customer') }}
           </button>
         </form>
 
@@ -98,19 +127,34 @@ export class RegisterComponent {
   private authService = inject(AuthService);
   private router = inject(Router);
 
-  name = '';
   email = '';
+  countryCode = '+91';
+  phoneNumber = '';
   password = '';
   role: 'CUSTOMER' | 'MANAGER' = 'CUSTOMER';
   loading = signal<boolean>(false);
   errorMessage = signal<string>('');
 
   onSubmit() {
-    this.loading.set(true);
     this.errorMessage.set('');
 
+    const cleanPhone = this.phoneNumber.trim();
+    if (!cleanPhone) {
+      this.errorMessage.set('Mobile phone number is required.');
+      return;
+    }
+
+    const fullPhone = `${this.countryCode} ${cleanPhone}`;
+
+    this.loading.set(true);
+
     this.authService
-      .register({ name: this.name, email: this.email, password: this.password, role: this.role })
+      .register({
+        email: this.email.trim(),
+        phone: fullPhone,
+        password: this.password,
+        role: this.role,
+      })
       .subscribe({
         next: () => {
           this.loading.set(false);

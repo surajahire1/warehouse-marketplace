@@ -10,6 +10,7 @@ import { ManagerDashboardComponent } from './features/manager/dashboard/dashboar
 import { WarehouseEditorComponent } from './features/manager/warehouse-editor/warehouse-editor.component';
 import { VerificationsComponent } from './features/admin/verifications/verifications.component';
 import { UsersComponent } from './features/admin/users/users.component';
+import { ProfileComponent } from './features/profile/profile.component';
 import { authGuard } from './core/guards/auth.guard';
 import { roleGuard } from './core/guards/role.guard';
 
@@ -22,6 +23,13 @@ export const routes: Routes = [
   // Auth Routes
   { path: 'auth/login', component: LoginComponent },
   { path: 'auth/register', component: RegisterComponent },
+
+  // Profile Route (Available to all logged-in users)
+  {
+    path: 'profile',
+    component: ProfileComponent,
+    canActivate: [authGuard],
+  },
 
   // Customer Routes
   {
